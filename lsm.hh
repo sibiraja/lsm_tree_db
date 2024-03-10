@@ -190,4 +190,40 @@ public:
         buffer_ptr_->insert(kv_pair);
         return true;
     }
+
+
+    int get(int key) {
+        // do linear search on the buffer (since buffer isn't sorted)
+        for (int i = 0; i < buffer_ptr_->capacity_; ++i) {
+            if (buffer_ptr_->buffer_[i].key == key) {
+                // TODO: add deletion logic here later
+                cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
+                return buffer_ptr_->buffer_[i].value;
+            }
+        }
+
+
+        // if not found in buffer, then do binary search across each level
+        for (int i = 1; i <= MAX_LEVELS; ++i) {
+            auto curr_level_ptr = levels_[i];
+
+            int l = 0;
+            int r = curr_level_ptr->curr_size_ - 1;
+
+            while (l <= r) {
+                int midpoint = (l + r) / 2;
+                if (curr_level_ptr->sstable_[midpoint].key == key) {
+                    cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
+                    return curr_level_ptr->sstable_[midpoint].value;
+                } else if (curr_level_ptr->sstable_[midpoint].key < key) {
+                    l = midpoint + 1;
+                } else {
+                    r = midpoint - 1;
+                }
+            }
+        }
+
+        cout << "Key: " << key << " WAS NOT FOUND!" << endl;
+        return -1;
+    }
 };

@@ -17,6 +17,8 @@ int main() {
     std::mt19937 gen(rd()); // Seed the generator
     std::uniform_int_distribution<> distr(-500, 500); // Define the range
 
+    int inserted_keys[40];
+
     for (int i = 0; i < 40; ++i) {
         // Generate random key and value
         int key = distr(gen);
@@ -27,6 +29,7 @@ int main() {
         // Insert the random key-value pair
         // mybuff->insert({key, value});
         db->insert({key, value});
+        inserted_keys[i] = key;
 
         // print database contents every 5 insertions to check merging logic
         if (i % 5 == 0) {
@@ -40,6 +43,17 @@ int main() {
     db->insert({distr(gen), distr(gen)});
     // print_database(&mybuff);
     print_database(&(db->buffer_ptr_));
+
+
+    // testing get() logic for inserted keys
+    for (int i = 39; i >= 0; --i) {
+        db->get(inserted_keys[i]);
+    }
+
+    // testing get() logic for non-existent keys
+    for (int i = 0; i < 10; ++i) {
+        db->get(i + 501); // since we only randomly generate keys that are up to 500
+    }
 
     return 0;
 }
