@@ -9,5 +9,7 @@ int main() {
     mybuff->insert({5,50});
     mybuff->insert({6,60});
 
+    print_database(&mybuff);
+
     return 0;
 }
