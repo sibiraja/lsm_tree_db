@@ -87,12 +87,17 @@ public:
                 continue;
             }
 
-            if (sstable_[my_ptr].key <= buffer_data[child_ptr].key) {
+            if (sstable_[my_ptr].key < buffer_data[child_ptr].key) {
                 temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
                 ++my_ptr;
-            } else {
+            } else if (sstable_[my_ptr].key > buffer_data[child_ptr].key) {
                 temp_sstable[temp_sstable_ptr] = {buffer_data[child_ptr].key, buffer_data[child_ptr].value, sstable_[my_ptr].deleted};
                 ++child_ptr;
+            } else {
+                // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
+                temp_sstable[temp_sstable_ptr] = {buffer_data[child_ptr].key, buffer_data[child_ptr].value, sstable_[my_ptr].deleted};
+                ++child_ptr;
+                ++my_ptr;
             }
 
             ++temp_sstable_ptr;
@@ -141,13 +146,24 @@ public:
     level* level1ptr_;
     int capacity_ = BUFFER_CAPACITY;
     int curr_size_ = 0;
-    lsm_data* buffer_ = nullptr; // make this a BST later, but it is array for initial testing purposes
+    lsm_data* buffer_ = nullptr; // TODO: make this a BST later, but it is array for initial testing purposes
 
     buffer() {
         buffer_ = new lsm_data[BUFFER_CAPACITY];
     }
     
     bool insert(lsm_data kv_pair) {
+        // first search through buffer, and if it exists, just update the key value struct directly to be the new value
+        // --> since simply adding a new entry to the buffer for updating might not cause the old entry to be deleted when merging later on since original comes before the new entry
+        // do linear search on the buffer (since buffer isn't sorted)
+        for (int i = 0; i < curr_size_; ++i) {
+            if (buffer_[i].key == kv_pair.key) {
+                cout << "DUPLICATE ENTRY FOUND FOR: (" << buffer_[i].key << ", " << buffer_[i].value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
+                buffer_[i].value = kv_pair.value;
+                return true;
+            }
+        }
+
         if (curr_size_ == capacity_) {
             // Sort the buffer before merging
             std::sort(buffer_, buffer_ + curr_size_, [](const lsm_data& a, const lsm_data& b) {
@@ -232,9 +248,8 @@ public:
 
     int get(int key) {
         // do linear search on the buffer (since buffer isn't sorted)
-        for (int i = 0; i < buffer_ptr_->capacity_; ++i) {
+        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             if (buffer_ptr_->buffer_[i].key == key) {
-                // TODO: add deletion logic here later
                 if (buffer_ptr_->buffer_[i].deleted) {
                     cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
                     return -1;
@@ -282,7 +297,7 @@ public:
         // first search through buffer, and if it exists, just update the key value struct directly to mark as deleted
         // --> since simply adding a new entry to the buffer for deletion might not cause the old entry to be deleted when merging later on since original comes before the new entry
         // do linear search on the buffer (since buffer isn't sorted)
-        for (int i = 0; i < buffer_ptr_->capacity_; ++i) {
+        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             if (buffer_ptr_->buffer_[i].key == key) {
                 cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
                 buffer_ptr_->buffer_[i].deleted = true;

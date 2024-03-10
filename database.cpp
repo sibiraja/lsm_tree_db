@@ -67,5 +67,29 @@ int main() {
 
     print_database(&(db->buffer_ptr_));
 
+    delete db;
+
+    /* This is to test update logic when duplicate keys are inserted */
+    cout << "======" << endl;
+    cout << "======" << endl;
+    cout << "======" << endl;
+
+    lsm_tree* new_db = new lsm_tree();
+    std::uniform_int_distribution<> new_distr(0, 10); // Define the range
+
+    for (int i = 0; i < 10; ++i) {
+        // Generate random key and value
+        int key = new_distr(gen);
+        int value = new_distr(gen);
+
+        cout << "Going to insert element " << i << ": (" << key << ", " << value << ")" << endl;
+
+        // Insert the random key-value pair
+        // mybuff->insert({key, value});
+        new_db->insert({key, value, false});
+    }
+
+    print_database(&(new_db->buffer_ptr_));
+
     return 0;
 }
