@@ -28,7 +28,7 @@ int main() {
 
         // Insert the random key-value pair
         // mybuff->insert({key, value});
-        db->insert({key, value});
+        db->insert({key, value, false});
         inserted_keys[i] = key;
 
         // print database contents every 5 insertions to check merging logic
@@ -40,9 +40,8 @@ int main() {
 
     // Insert one more and print final database contents
     // mybuff->insert({distr(gen), distr(gen)});
-    db->insert({distr(gen), distr(gen)});
+    db->insert({distr(gen), distr(gen), false});
     // print_database(&mybuff);
-    print_database(&(db->buffer_ptr_));
 
 
     // testing get() logic for inserted keys
@@ -54,6 +53,19 @@ int main() {
     for (int i = 0; i < 10; ++i) {
         db->get(i + 501); // since we only randomly generate keys that are up to 500
     }
+
+    print_database(&(db->buffer_ptr_));
+    cout << "======" << endl;
+    cout << "======" << endl;
+    cout << "======" << endl;
+
+    // delete() some keys and then call get() on them
+    for (int i = 39; i >= 30; --i) {
+        db->delete_key(inserted_keys[i]);
+        db->get(inserted_keys[i]);
+    }
+
+    print_database(&(db->buffer_ptr_));
 
     return 0;
 }
