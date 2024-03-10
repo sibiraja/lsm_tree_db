@@ -30,11 +30,6 @@ public:
         curr_level_ = curr_level;
         sstable_ = new lsm_data[capacity_];
 
-        // only create a next level if we are not at the max level
-        if (curr_level_ != MAX_LEVELS) {
-            next_ = new level(capacity * SIZE_RATIO, curr_level_ + 1);
-        }
-
         cout << "Created level " << curr_level_ << " with capacity " << capacity_ << endl;
     }
     
@@ -111,8 +106,6 @@ public:
     lsm_data* buffer_ = nullptr; // make this a BST later, but it is array for initial testing purposes
 
     buffer() {
-        // malloc a new level object and assign level1ptr_ to point to that object
-        level1ptr_ = new level(INITIAL_LEVEL_CAPACITY, 1);
         buffer_ = new lsm_data[BUFFER_CAPACITY];
     }
     
@@ -169,3 +162,32 @@ void print_database(buffer** buff_ptr) {
         curr_element = 0;
     }
 }
+
+
+
+class lsm_tree {
+public:
+    buffer* buffer_ptr_;
+    level* levels_[MAX_LEVELS + 1]; // index 0 is going to be empty for simplicty since level 0 is the buffer, so we of size MAX_LEVELS + 1 to have enough space for ptrs for each level
+
+    lsm_tree() {
+        buffer_ptr_ = new buffer();
+
+        // malloc a new level object and assign level1ptr_ to point to that object
+        buffer_ptr_->level1ptr_ = new level(INITIAL_LEVEL_CAPACITY, 1);
+        levels_[1] = buffer_ptr_->level1ptr_; // ptr to level 1 is stored in index 1
+        
+        auto curr_level_ptr = levels_[1];
+        for (int i = 2; i <= MAX_LEVELS; ++i) {
+            levels_[i] = new level(curr_level_ptr->capacity_ * SIZE_RATIO, i);
+            curr_level_ptr->next_ = levels_[i];
+            curr_level_ptr = levels_[i];
+        }
+    }
+
+
+    bool insert(lsm_data kv_pair) {
+        buffer_ptr_->insert(kv_pair);
+        return true;
+    }
+};
