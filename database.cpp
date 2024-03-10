@@ -89,6 +89,8 @@ int main() {
         new_db->insert({key, value, false});
     }
 
+    new_db->range(5,10);
+
     print_database(&(new_db->buffer_ptr_));
 
     return 0;

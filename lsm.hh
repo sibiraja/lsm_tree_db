@@ -293,6 +293,13 @@ public:
     }
 
 
+    void range(int start, int end) {
+        for (int i = start; i < end; ++i) {
+            get(i);
+        }
+    }
+
+
     void delete_key(int key) {
         // first search through buffer, and if it exists, just update the key value struct directly to mark as deleted
         // --> since simply adding a new entry to the buffer for deletion might not cause the old entry to be deleted when merging later on since original comes before the new entry
