@@ -1,4 +1,6 @@
 #include <iostream>
+#include <algorithm>
+
 #define INITIAL_LEVEL_CAPACITY  10
 #define SIZE_RATIO              2
 #define BUFFER_CAPACITY         5
@@ -47,7 +49,7 @@ public:
             cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
             next_->merge(&sstable_, curr_size_);
             curr_size_ = 0;
-            delete sstable_;
+            delete[] sstable_;
             sstable_ = new lsm_data[capacity_];
         } else if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ == MAX_LEVELS) {
             cout << "ERROR: CAN'T CASCADE MERGE, DATABASE IS FULL!" << endl;
@@ -91,7 +93,7 @@ public:
             ++temp_sstable_ptr;
         }
 
-        delete sstable_;
+        delete[] sstable_;
         sstable_ = temp_sstable;
         curr_size_ = temp_sstable_ptr;
 
@@ -116,9 +118,16 @@ public:
     
     bool insert(lsm_data kv_pair) {
         if (curr_size_ == capacity_) {
-            level1ptr_->merge(&buffer_, capacity_);
+            // Sort the buffer before merging
+            std::sort(buffer_, buffer_ + curr_size_, [](const lsm_data& a, const lsm_data& b) {
+                return a.key < b.key;
+            });
+
+            // Merge the sorted buffer into the LSM tree
+            level1ptr_->merge(&buffer_, curr_size_);
+            
             curr_size_ = 0;
-            delete buffer_;
+            delete[] buffer_;
             buffer_ = new lsm_data[BUFFER_CAPACITY];
         }
 
@@ -148,7 +157,7 @@ void print_database(buffer** buff_ptr) {
     curr_element = 0;
     level* curr_level = buff->level1ptr_;
     for (int i = 0; i < MAX_LEVELS; ++i) {
-        cout << "=====Printing data at level " << i << " =======" << endl;
+        cout << "=====Printing data at level " << i + 1 << " =======" << endl;
 
         while (curr_element < curr_level->curr_size_) {
             cout << "Element " << total_elements << ": (" << curr_level->sstable_[curr_element].key << ", " << curr_level->sstable_[curr_element].value << ")" << endl;
