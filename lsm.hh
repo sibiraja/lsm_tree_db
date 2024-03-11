@@ -147,7 +147,10 @@ public:
     level* level1ptr_;
     int capacity_ = BUFFER_CAPACITY;
     int curr_size_ = 0;
-    lsm_data* buffer_ = nullptr; // TODO: make this a BST later, but it is array for initial testing purposes
+
+    // note: can make this a separate data structure later, but tbh an unsorted array that sorts itself at the end is roughly the same performance as
+    // a heap or BST. 
+    lsm_data* buffer_ = nullptr;
 
     buffer() {
         buffer_ = new lsm_data[BUFFER_CAPACITY];
