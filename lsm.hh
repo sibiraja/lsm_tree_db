@@ -31,25 +31,26 @@ public:
         curr_level_ = curr_level;
         sstable_ = new lsm_data[capacity_];
 
-        cout << "Created level " << curr_level_ << " with capacity " << capacity_ << endl;
+        // cout << "Created level " << curr_level_ << " with capacity " << capacity_ << endl;
     }
     
 
     // only called on level1 since other levels never have to merge data directly from the buffer
     bool merge(lsm_data** buffer_data_ptr, int num_elements_to_merge) {
-        cout << "Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
+        // cout << "Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
         auto buffer_data = *buffer_data_ptr;
 
         // check for a potential cascade of merges
         if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
-            cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
+            // cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
             next_->merge(&sstable_, curr_size_);
             curr_size_ = 0;
             delete[] sstable_;
             sstable_ = new lsm_data[capacity_];
         } else if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ == MAX_LEVELS) {
             cout << "ERROR: CAN'T CASCADE MERGE, DATABASE IS FULL!" << endl;
-            return false;
+            exit(0);
+            // return false;
         }
         
         // // just printing contents for now
@@ -158,7 +159,7 @@ public:
         // do linear search on the buffer (since buffer isn't sorted)
         for (int i = 0; i < curr_size_; ++i) {
             if (buffer_[i].key == kv_pair.key) {
-                cout << "DUPLICATE ENTRY FOUND FOR: (" << buffer_[i].key << ", " << buffer_[i].value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
+                // cout << "DUPLICATE ENTRY FOUND FOR: (" << buffer_[i].key << ", " << buffer_[i].value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
                 buffer_[i].value = kv_pair.value;
                 return true;
             }
@@ -180,7 +181,7 @@ public:
 
         buffer_[curr_size_] = kv_pair;
         ++curr_size_;
-        cout << "Inserted (" << kv_pair.key << ", " << kv_pair.value << ")! curr_size is now " << curr_size_ << endl;
+        // cout << "Inserted (" << kv_pair.key << ", " << kv_pair.value << ")! curr_size is now " << curr_size_ << endl;
         return true;
     }
 };
@@ -246,16 +247,24 @@ public:
     }
 
 
-    int get(int key) {
+    int get(int key, bool called_from_range = false) {
         // do linear search on the buffer (since buffer isn't sorted)
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             if (buffer_ptr_->buffer_[i].key == key) {
                 if (buffer_ptr_->buffer_[i].deleted) {
-                    cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
+                    // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
+                    if (!called_from_range) {
+                        cout << endl; // print empty line for deleted key
+                    }
                     return -1;
                 }
 
-                cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
+                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
+                if (!called_from_range) {
+                    cout << buffer_ptr_->buffer_[i].value << endl;
+                } else {
+                    cout << key << ":" << buffer_ptr_->buffer_[i].value << " ";
+                }
                 return buffer_ptr_->buffer_[i].value;
             }
         }
@@ -274,11 +283,19 @@ public:
 
                     // check if deleted here, otherwise, return it's value 
                     if (curr_level_ptr->sstable_[midpoint].deleted) {
-                        cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was DELETED so NOT FOUND!" << endl;
+                        // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was DELETED so NOT FOUND!" << endl;
+                        if (!called_from_range) {
+                            cout << endl; // print empty line for deleted key
+                        }
                         return -1;
                     }
 
-                    cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
+                    // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
+                    if (!called_from_range) {
+                        cout << curr_level_ptr->sstable_[midpoint].value << endl;
+                    } else {
+                        cout << key << ":" << curr_level_ptr->sstable_[midpoint].value << " ";
+                    }
                     return curr_level_ptr->sstable_[midpoint].value;
                 } else if (curr_level_ptr->sstable_[midpoint].key < key) {
                     l = midpoint + 1;
@@ -288,15 +305,19 @@ public:
             }
         }
 
-        cout << "Key: " << key << " WAS NOT FOUND!" << endl;
+        // cout << "Key: " << key << " WAS NOT FOUND!" << endl;
+        if (!called_from_range) {
+            cout << endl; // print empty line to signify no key was found
+        }
         return -1;
     }
 
 
     void range(int start, int end) {
         for (int i = start; i < end; ++i) {
-            get(i);
+            get(i, true);
         }
+        cout << endl; // to end the line that the space delineated list of all the found pairs in the given range were printed on inside `get()`
     }
 
 
@@ -306,7 +327,7 @@ public:
         // do linear search on the buffer (since buffer isn't sorted)
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             if (buffer_ptr_->buffer_[i].key == key) {
-                cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
+                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
                 buffer_ptr_->buffer_[i].deleted = true;
                 return;
             }

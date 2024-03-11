@@ -24,7 +24,7 @@ int main() {
         int key = distr(gen);
         int value = distr(gen);
 
-        cout << "Going to insert element " << i << ": (" << key << ", " << value << ")" << endl;
+        // cout << "Going to insert element " << i << ": (" << key << ", " << value << ")" << endl;
 
         // Insert the random key-value pair
         // mybuff->insert({key, value});
@@ -34,7 +34,7 @@ int main() {
         // print database contents every 5 insertions to check merging logic
         if (i % 5 == 0) {
             // print_database(&mybuff);
-            print_database(&(db->buffer_ptr_));
+            // print_database(&(db->buffer_ptr_));
         }
     }
 
@@ -54,10 +54,10 @@ int main() {
         db->get(i + 501); // since we only randomly generate keys that are up to 500
     }
 
-    print_database(&(db->buffer_ptr_));
-    cout << "======" << endl;
-    cout << "======" << endl;
-    cout << "======" << endl;
+    // print_database(&(db->buffer_ptr_));
+    // cout << "======" << endl;
+    // cout << "======" << endl;
+    // cout << "======" << endl;
 
     // delete() some keys and then call get() on them
     for (int i = 39; i >= 30; --i) {
@@ -65,14 +65,14 @@ int main() {
         db->get(inserted_keys[i]);
     }
 
-    print_database(&(db->buffer_ptr_));
+    // print_database(&(db->buffer_ptr_));
 
     delete db;
 
     /* This is to test update logic when duplicate keys are inserted */
-    cout << "======" << endl;
-    cout << "======" << endl;
-    cout << "======" << endl;
+    // cout << "======" << endl;
+    // cout << "======" << endl;
+    // cout << "======" << endl;
 
     lsm_tree* new_db = new lsm_tree();
     std::uniform_int_distribution<> new_distr(0, 10); // Define the range
@@ -82,7 +82,7 @@ int main() {
         int key = new_distr(gen);
         int value = new_distr(gen);
 
-        cout << "Going to insert element " << i << ": (" << key << ", " << value << ")" << endl;
+        // cout << "Going to insert element " << i << ": (" << key << ", " << value << ")" << endl;
 
         // Insert the random key-value pair
         // mybuff->insert({key, value});
@@ -91,7 +91,7 @@ int main() {
 
     new_db->range(5,10);
 
-    print_database(&(new_db->buffer_ptr_));
+    // print_database(&(new_db->buffer_ptr_));
 
     return 0;
 }
