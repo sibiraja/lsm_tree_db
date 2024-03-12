@@ -1,5 +1,10 @@
 #include <iostream>
 #include <algorithm>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <cstring>
 
 #define INITIAL_LEVEL_CAPACITY  10
 #define SIZE_RATIO              2
@@ -8,6 +13,10 @@
 #define NUM_ENTRIES_PER_PAGE    341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes 
 #define LSM_DATA_SIZE           12
 
+// Global metadata variables
+const char* metadata_filename = "level_metadata.data";
+const size_t metadata_size = MAX_LEVELS * sizeof(int); // fixed size for metadata since each level will have an int representing it's `curr_size`
+int* metadata_file_ptr;
 
 using namespace std;
 
@@ -29,12 +38,73 @@ public:
     level* prev_ = nullptr;
     level* next_ = nullptr;
 
+    string disk_file_name_;
+    int file_capacity_bytes_;
+
     level(int capacity, int curr_level) {
         capacity_ = capacity;
         curr_level_ = curr_level;
         sstable_ = new lsm_data[capacity_];
 
         // cout << "Created level " << curr_level_ << " with capacity " << capacity_ << endl;
+
+
+        // NEW DISK STORAGE IMPLEMENTATION CODE
+        disk_file_name_ = "LEVEL" + to_string(curr_level_) + ".data";
+        file_capacity_bytes_ = 4096 * curr_level_;
+
+        // in case we already have data for this level, udpate the curr_size count using the level metadata file and re-construct bloom filters and fence pointers
+        struct stat file_exists;
+        if (stat (disk_file_name_.c_str(), &file_exists) == 0) {
+            curr_size_ = metadata_file_ptr[curr_level_];
+            bf_fp_construct();
+            // cout << disk_file_name_ << " exists!" << endl; 
+        } else {
+            // cout << disk_file_name_ << " DNE!" << endl;
+        }
+
+        // open LEVEL#.data file (or create it if it DNE) -- Note that we need this line of code in both cases, so it's fine to have it below the if-else statement above
+
+        int fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        if (fd == -1) {
+            cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+            exit(0);
+        }
+
+        /* Moving the file pointer to the end of the file*/
+        int rflag = lseek(fd, file_capacity_bytes_-1, SEEK_SET);
+        
+        if(rflag == -1)
+        {
+            cout << "Lseek failed! Exiting program" << endl;
+            close(fd);
+            exit(0);
+        }
+
+        /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+        rflag = write(fd, "", 1);
+        if(rflag == -1)
+        {
+            cout << "Writing empty string failed! Exiting program" << endl;
+            close(fd);
+            exit(0);
+        }
+
+        // TODO: mmap the LEVEL#.data file and assign sstable_ to it. --> maybe create a new_sstable_ variable and first test it to make sure I don't break any old functionality?
+        
+
+        // i think i don't need to memset right now, but perhaps might need to. obv is good practice, but i think it is not needed since it might
+        // mess up if i memset the file when it already contains old data from previous database runs.
+
+        
+        // END NEW DISK STORAGE IMPLEMENTATION CODE
+
+    }
+
+
+    // This function should re-construct bloom filters and fence pointers for a given level whenever we have new data at this level 
+    void bf_fp_construct() {
+        // TODO: implement this function
     }
     
 
@@ -232,6 +302,46 @@ public:
     level* levels_[MAX_LEVELS + 1]; // index 0 is going to be empty for simplicty since level 0 is the buffer, so we of size MAX_LEVELS + 1 to have enough space for ptrs for each level
 
     lsm_tree() {
+        // NEW DISK STORAGE IMPLEMENTATION CODE
+        // if `level_metadata.data` file doesn't exist, create it and memset() it to all 0's to represent curr_size is 0 for all levels when we have no data yet
+        int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
+        if (fd == -1) {
+            cout << "Error in opening / creating global `level_metadata` file! Exiting program" << endl;
+            exit(0);
+        }
+
+        /* Moving the file pointer to the end of the file*/
+        int rflag = lseek(fd, (MAX_LEVELS * sizeof(int))-1, SEEK_SET);
+        
+        if(rflag == -1)
+        {
+            cout << "Lseek failed! Exiting program" << endl;
+            close(fd);
+            exit(0);
+        }
+
+        /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+        rflag = write(fd, "", 1);
+        if(rflag == -1)
+        {
+            cout << "Writing empty string failed! Exiting program" << endl;
+            close(fd);
+            exit(0);
+        }
+
+        // memory map the metadata file contents into process memory so we can access it when inside any level::function()
+        metadata_file_ptr = (int*) mmap(0,(MAX_LEVELS * sizeof(int)), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+        if (metadata_file_ptr == MAP_FAILED)
+        {
+            cout << "mmap() on the metadata file failed! Exiting program" << endl;
+            close(fd);
+            exit(0);
+        }
+
+        memset(metadata_file_ptr, 0, metadata_size);
+
+        // END NEW DISK STORAGE IMPLEMENTATION CODE
+
         buffer_ptr_ = new buffer();
 
         // malloc a new level object and assign level1ptr_ to point to that object
