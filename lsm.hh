@@ -5,6 +5,9 @@
 #define SIZE_RATIO              2
 #define BUFFER_CAPACITY         5
 #define MAX_LEVELS              10
+#define NUM_ENTRIES_PER_PAGE    341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes 
+#define LSM_DATA_SIZE           12
+
 
 using namespace std;
 
@@ -36,9 +39,9 @@ public:
     
 
     // only called on level1 since other levels never have to merge data directly from the buffer
-    bool merge(lsm_data** buffer_data_ptr, int num_elements_to_merge) {
+    bool merge(lsm_data** child_data_ptr, int num_elements_to_merge) {
         // cout << "Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
-        auto buffer_data = *buffer_data_ptr;
+        auto child_data = *child_data_ptr;
 
         // check for a potential cascade of merges
         if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
@@ -56,7 +59,7 @@ public:
         // // just printing contents for now
         // cout << "Printing buffer contents" << endl;
         // for (int i = 0; i < num_elements_to_merge; ++i) {
-        //     cout << "Index i: (" << buffer_data[i].key << ", " << buffer_data[i].value << ")" << endl;
+        //     cout << "Index i: (" << child_data[i].key << ", " << child_data[i].value << ")" << endl;
         // }
 
         // merge 2 sorted arrays into 1 sorted array
@@ -70,7 +73,7 @@ public:
             
 
             // if both are the same key, and either one is deleted, skip over both
-            if (sstable_[my_ptr].key == buffer_data[child_ptr].key && (sstable_[my_ptr].deleted || buffer_data[child_ptr].deleted)) {
+            if (sstable_[my_ptr].key == child_data[child_ptr].key && (sstable_[my_ptr].deleted || child_data[child_ptr].deleted)) {
                 ++my_ptr;
                 ++child_ptr;
                 continue; // so we don't execute the below conditions
@@ -83,20 +86,20 @@ public:
                 continue;
             }
             
-            if (buffer_data[child_ptr].deleted) {
+            if (child_data[child_ptr].deleted) {
                 ++child_ptr;
                 continue;
             }
 
-            if (sstable_[my_ptr].key < buffer_data[child_ptr].key) {
+            if (sstable_[my_ptr].key < child_data[child_ptr].key) {
                 temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
                 ++my_ptr;
-            } else if (sstable_[my_ptr].key > buffer_data[child_ptr].key) {
-                temp_sstable[temp_sstable_ptr] = {buffer_data[child_ptr].key, buffer_data[child_ptr].value, sstable_[my_ptr].deleted};
+            } else if (sstable_[my_ptr].key > child_data[child_ptr].key) {
+                temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
-                temp_sstable[temp_sstable_ptr] = {buffer_data[child_ptr].key, buffer_data[child_ptr].value, sstable_[my_ptr].deleted};
+                temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
                 ++child_ptr;
                 ++my_ptr;
             }
@@ -120,14 +123,14 @@ public:
 
         while (child_ptr < num_elements_to_merge ) {
             // skip over deleted elements here
-            if (buffer_data[child_ptr].deleted) {
+            if (child_data[child_ptr].deleted) {
                 ++child_ptr;
                 continue;
             }
 
-            assert(buffer_data[child_ptr].deleted == false);
+            assert(child_data[child_ptr].deleted == false);
 
-            temp_sstable[temp_sstable_ptr] = {buffer_data[child_ptr].key, buffer_data[child_ptr].value, sstable_[my_ptr].deleted};
+            temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
             ++child_ptr;
             ++temp_sstable_ptr;
         }
