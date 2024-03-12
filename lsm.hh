@@ -18,6 +18,10 @@ const char* metadata_filename = "level_metadata.data";
 const size_t metadata_size = MAX_LEVELS * sizeof(int); // fixed size for metadata since each level will have an int representing it's `curr_size`
 int* metadata_file_ptr;
 
+// global array that will contain pointers to each level object that we create so we can access attributes easily 
+class level; // forward declaration so compiler knows what level type is before we hit the next line of code
+level* levels_[MAX_LEVELS + 1]; // index 0 is going to be empty for simplicty since level 0 is the buffer, so we of size MAX_LEVELS + 1 to have enough space for ptrs for each level
+
 using namespace std;
 
 struct lsm_data {
@@ -96,7 +100,7 @@ public:
         // i think i don't need to memset right now, but perhaps might need to. obv is good practice, but i think it is not needed since it might
         // mess up if i memset the file when it already contains old data from previous database runs.
 
-        
+        close(fd);
         // END NEW DISK STORAGE IMPLEMENTATION CODE
 
     }
@@ -109,14 +113,14 @@ public:
     
 
     // only called on level1 since other levels never have to merge data directly from the buffer
-    bool merge(lsm_data** child_data_ptr, int num_elements_to_merge) {
+    bool merge(lsm_data** child_data_ptr, int num_elements_to_merge, int child_level, lsm_data** buffer_ptr = nullptr) {
         // cout << "Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
         auto child_data = *child_data_ptr;
 
         // check for a potential cascade of merges
         if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
             // cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
-            next_->merge(&sstable_, curr_size_);
+            next_->merge(&sstable_, curr_size_, curr_level_);
             curr_size_ = 0;
             delete[] sstable_;
             sstable_ = new lsm_data[capacity_];
@@ -132,6 +136,88 @@ public:
         //     cout << "Index i: (" << child_data[i].key << ", " << child_data[i].value << ")" << endl;
         // }
 
+        // MMAP CONTENTS OF CHILD DATA AND CURRENT LEVEL DATA HERE, NOT AT TOP OF MERGE FUNCTION SO WE DON'T RUN OUT OF RAM MEMORY WHEN CASCADE MERGING
+
+        int child_fd = -1;
+        lsm_data* new_child_data;
+        if (child_level == 0) {
+            cout << "child is buffer, no need to mmap()!" << endl;
+            assert(buffer_ptr != nullptr);
+            new_child_data = *buffer_ptr;
+        } 
+        
+        // mmap child's file if it is a level and not the buffer
+        else {
+            assert(buffer_ptr == nullptr);
+            cout << "child is a level, mmap()'ing!" << endl;
+            // new_child_data = mmap the level's disk file
+            child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+            if (child_fd == -1) {
+                cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Exiting program" << endl;
+                exit(0);
+            }
+            new_child_data = (lsm_data*) mmap(0, levels_[child_level]->file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
+
+            if (new_child_data == MAP_FAILED)
+            {
+                cout << "mmap() on the child's file failed! Exiting program" << endl;
+                close(child_fd);
+                exit(0);
+            }
+        }
+
+        // mmap() current file's contents
+        int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        if (curr_fd == -1) {
+            cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+            exit(0);
+        }
+        lsm_data* new_curr_sstable = (lsm_data*) mmap(0, file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+        if (new_curr_sstable == MAP_FAILED)
+        {
+            cout << "mmap() on the current level's file failed! Exiting program" << endl;
+            close(child_fd);
+            exit(0);
+        }
+        cout << "mmap()'ed the current level's file!" << endl;
+
+
+        // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
+        int temp_fd = open("TEMP.data", O_RDWR | O_CREAT, (mode_t)0600);
+        if (temp_fd == -1) {
+            cout << "Error in opening / creating TEMP.data file! Exiting program" << endl;
+            exit(0);
+        }
+
+        /* Moving the file pointer to the end of the file*/
+        int rflag = lseek(temp_fd, file_capacity_bytes_-1, SEEK_SET);
+        
+        if(rflag == -1)
+        {
+            cout << "Lseek failed! Exiting program" << endl;
+            close(temp_fd);
+            exit(0);
+        }
+
+        /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+        rflag = write(temp_fd, "", 1);
+        if(rflag == -1)
+        {
+            cout << "Writing empty string failed! Exiting program" << endl;
+            close(temp_fd);
+            exit(0);
+        }
+
+        lsm_data* new_temp_sstable = (lsm_data*) mmap(0, file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, temp_fd, 0);
+        if (new_temp_sstable == MAP_FAILED)
+        {
+            cout << "mmap() on the current level's file failed! Exiting program" << endl;
+            close(temp_fd);
+            exit(0);
+        }
+        cout << "mmap()'ed the temp data file!" << endl;
+
+
         // merge 2 sorted arrays into 1 sorted array
         int my_ptr = 0;
         int child_ptr = 0;
@@ -140,6 +226,9 @@ public:
         lsm_data* temp_sstable = new lsm_data[capacity_];
 
         while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
+
+            assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
+            assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
             
 
             // if both are the same key, and either one is deleted, skip over both
@@ -162,13 +251,16 @@ public:
             }
 
             if (sstable_[my_ptr].key < child_data[child_ptr].key) {
+                new_temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
                 temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
                 ++my_ptr;
             } else if (sstable_[my_ptr].key > child_data[child_ptr].key) {
+                new_temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
                 temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
+                new_temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
                 temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
                 ++child_ptr;
                 ++my_ptr;
@@ -179,6 +271,7 @@ public:
 
         while (my_ptr < curr_size_ ) {
             // skip over deleted elements here
+            assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
             if (sstable_[my_ptr].deleted) {
                 ++my_ptr;
                 continue;
@@ -186,6 +279,7 @@ public:
 
             assert(sstable_[my_ptr].deleted == false);
 
+            new_temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
             temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
             ++my_ptr;
             ++temp_sstable_ptr;
@@ -193,6 +287,7 @@ public:
 
         while (child_ptr < num_elements_to_merge ) {
             // skip over deleted elements here
+            assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
             if (child_data[child_ptr].deleted) {
                 ++child_ptr;
                 continue;
@@ -200,6 +295,7 @@ public:
 
             assert(child_data[child_ptr].deleted == false);
 
+            new_temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
             temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
             ++child_ptr;
             ++temp_sstable_ptr;
@@ -208,6 +304,70 @@ public:
         delete[] sstable_;
         sstable_ = temp_sstable;
         curr_size_ = temp_sstable_ptr;
+
+        // write curr_size to metadata file
+        metadata_file_ptr[curr_level_] = curr_size_;
+        rflag = msync(metadata_file_ptr, (MAX_LEVELS * sizeof(int)), MS_SYNC);
+        if(rflag == -1)
+        {
+            printf("Unable to msync to metadata file.\n");
+            exit(0);
+        }
+
+
+        // MSYNC temp data file and munmap temp file
+        if (new_temp_sstable != NULL && temp_fd != -1)
+        {
+            /*Syncing the contents of the memory with file, flushing the pages to disk*/
+
+            rflag = msync(new_temp_sstable, file_capacity_bytes_, MS_SYNC);
+            if(rflag == -1)
+            {
+                printf("Unable to msync.\n");
+            }
+            rflag = munmap(new_temp_sstable, file_capacity_bytes_);
+            if(rflag == -1)
+            {
+                printf("Unable to munmap.\n");
+            }
+            close(temp_fd);
+        }
+
+        
+        // munmap child
+        if (child_fd != -1) {
+            int child_rflag = munmap(new_child_data, levels_[child_level]->file_capacity_bytes_);
+            if(child_rflag == -1)
+            {
+                printf("Unable to munmap child's file.\n");
+            }
+            cout << "child is a level, just munmap()'ed!" << endl;
+            close(child_fd);
+        }
+
+        // munmap curr level file
+        rflag = munmap(new_curr_sstable, file_capacity_bytes_);
+        if(rflag == -1)
+        {
+            printf("Unable to munmap current level's file.\n");
+        }
+        cout << "munmap()'ed the current level's file!" << endl;
+        close(curr_fd);
+
+        // DELETE original curr level file, rename temp data file
+        if (remove(disk_file_name_.c_str()) == 0) {
+            cout << disk_file_name_ << " deleted successfully" << endl;
+        } else {
+            cout << "Error in deleting " << disk_file_name_ << endl;
+            exit(0);
+        }
+
+        if (rename("TEMP.data", disk_file_name_.c_str()) == 0) {
+            cout << "Successfully renamed temp file to " << disk_file_name_ << endl;
+        } else {
+            cout << "Error in renaming temp file" << endl;
+            exit(0);
+        }
 
         return true;
     }
@@ -248,7 +408,7 @@ public:
             });
 
             // Merge the sorted buffer into the LSM tree
-            level1ptr_->merge(&buffer_, curr_size_);
+            level1ptr_->merge(&buffer_, curr_size_, 0, &buffer_);
             
             curr_size_ = 0;
             delete[] buffer_;
@@ -299,8 +459,7 @@ void print_database(buffer** buff_ptr) {
 class lsm_tree {
 public:
     buffer* buffer_ptr_;
-    level* levels_[MAX_LEVELS + 1]; // index 0 is going to be empty for simplicty since level 0 is the buffer, so we of size MAX_LEVELS + 1 to have enough space for ptrs for each level
-
+    
     lsm_tree() {
         // NEW DISK STORAGE IMPLEMENTATION CODE
         // if `level_metadata.data` file doesn't exist, create it and memset() it to all 0's to represent curr_size is 0 for all levels when we have no data yet
@@ -362,7 +521,7 @@ public:
         return true;
     }
 
-
+    // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
     int get(int key, bool called_from_range = false) {
         // do linear search on the buffer (since buffer isn't sorted)
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
