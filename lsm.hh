@@ -38,7 +38,6 @@ public:
     int capacity_;
     int curr_size_ = 0;
     int curr_level_;
-    lsm_data* sstable_ = nullptr; // initialized to nullptr, and we should maintain an invariant `sstable_ = nullptr` if the SSTable is empty for a level
     level* prev_ = nullptr;
     level* next_ = nullptr;
 
@@ -48,7 +47,6 @@ public:
     level(int capacity, int curr_level) {
         capacity_ = capacity;
         curr_level_ = curr_level;
-        sstable_ = new lsm_data[capacity_];
 
         // cout << "Created level " << curr_level_ << " with capacity " << capacity_ << endl;
 
@@ -113,17 +111,40 @@ public:
     
 
     // only called on level1 since other levels never have to merge data directly from the buffer
-    bool merge(lsm_data** child_data_ptr, int num_elements_to_merge, int child_level, lsm_data** buffer_ptr = nullptr) {
+    bool merge(int num_elements_to_merge, int child_level, lsm_data** buffer_ptr = nullptr) {
         // cout << "Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
-        auto child_data = *child_data_ptr;
 
         // check for a potential cascade of merges
         if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
-            // cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
-            next_->merge(&sstable_, curr_size_, curr_level_);
+            cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
+            next_->merge(curr_size_, curr_level_);
+
+            // reset data for this level as it has been merged with another level already
             curr_size_ = 0;
-            delete[] sstable_;
-            sstable_ = new lsm_data[capacity_];
+
+            int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+            if (curr_fd == -1) {
+                cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+                exit(0);
+            }
+            
+            lsm_data* curr_file_ptr = (lsm_data*) mmap(0,file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            if (curr_file_ptr == MAP_FAILED)
+            {
+                cout << "mmap() on the current level's file failed! Exiting program" << endl;
+                close(curr_fd);
+                exit(0);
+            }
+
+            memset(curr_file_ptr, 0, file_capacity_bytes_);
+            int rflag = msync(curr_file_ptr, file_capacity_bytes_, MS_SYNC);
+            rflag = munmap(curr_file_ptr, file_capacity_bytes_);
+            if(rflag == -1)
+            {
+                printf("Unable to munmap.\n");
+            }
+            close(curr_fd);
+            cout << "Memset level " << curr_level_ << "'s file to all 0's bc it has been merged with another level!" << endl;
         } else if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ == MAX_LEVELS) {
             cout << "ERROR: CAN'T CASCADE MERGE, DATABASE IS FULL!" << endl;
             exit(0);
@@ -223,16 +244,15 @@ public:
         int child_ptr = 0;
 
         int temp_sstable_ptr = 0;
-        lsm_data* temp_sstable = new lsm_data[capacity_];
 
         while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
-            assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
-            assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
+            // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
+            // assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
             
 
             // if both are the same key, and either one is deleted, skip over both
-            if (sstable_[my_ptr].key == child_data[child_ptr].key && (sstable_[my_ptr].deleted || child_data[child_ptr].deleted)) {
+            if (new_curr_sstable[my_ptr].key == new_child_data[child_ptr].key && (new_curr_sstable[my_ptr].deleted || new_child_data[child_ptr].deleted)) {
                 ++my_ptr;
                 ++child_ptr;
                 continue; // so we don't execute the below conditions
@@ -240,28 +260,25 @@ public:
 
             // if currently at a deleted key at either list, skip over it
             // --> this case is when the lists have unique keys but they have been deleted themselves already, so we should not merge them
-            if (sstable_[my_ptr].deleted) {
+            if (new_curr_sstable[my_ptr].deleted) {
                 ++my_ptr;
                 continue;
             }
             
-            if (child_data[child_ptr].deleted) {
+            if (new_child_data[child_ptr].deleted) {
                 ++child_ptr;
                 continue;
             }
 
-            if (sstable_[my_ptr].key < child_data[child_ptr].key) {
-                new_temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
-                temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
+            if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
+                new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
                 ++my_ptr;
-            } else if (sstable_[my_ptr].key > child_data[child_ptr].key) {
-                new_temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
-                temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
+            } else if (new_curr_sstable[my_ptr].key > new_child_data[child_ptr].key) {
+                new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
-                new_temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
-                temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
+                new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
                 ++child_ptr;
                 ++my_ptr;
             }
@@ -271,38 +288,35 @@ public:
 
         while (my_ptr < curr_size_ ) {
             // skip over deleted elements here
-            assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
-            if (sstable_[my_ptr].deleted) {
+            // assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
+            if (new_curr_sstable[my_ptr].deleted) {
                 ++my_ptr;
                 continue;
             }
 
-            assert(sstable_[my_ptr].deleted == false);
+            // assert(sstable_[my_ptr].deleted == false);
 
-            new_temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
-            temp_sstable[temp_sstable_ptr] = {sstable_[my_ptr].key, sstable_[my_ptr].value, sstable_[my_ptr].deleted};
+            new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
             ++my_ptr;
             ++temp_sstable_ptr;
         }
 
         while (child_ptr < num_elements_to_merge ) {
             // skip over deleted elements here
-            assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
-            if (child_data[child_ptr].deleted) {
+            // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
+            if (new_child_data[child_ptr].deleted) {
                 ++child_ptr;
                 continue;
             }
 
-            assert(child_data[child_ptr].deleted == false);
+            // assert(child_data[child_ptr].deleted == false);
 
-            new_temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
-            temp_sstable[temp_sstable_ptr] = {child_data[child_ptr].key, child_data[child_ptr].value, sstable_[my_ptr].deleted};
+            new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
             ++child_ptr;
             ++temp_sstable_ptr;
         }
 
-        delete[] sstable_;
-        sstable_ = temp_sstable;
+
         curr_size_ = temp_sstable_ptr;
 
         // write curr_size to metadata file
@@ -408,7 +422,7 @@ public:
             });
 
             // Merge the sorted buffer into the LSM tree
-            level1ptr_->merge(&buffer_, curr_size_, 0, &buffer_);
+            level1ptr_->merge(curr_size_, 0, &buffer_);
             
             curr_size_ = 0;
             delete[] buffer_;
@@ -425,33 +439,7 @@ public:
 
 
 void print_database(buffer** buff_ptr) {
-    cout << "====Printing database contents!===" << endl;
-    int total_elements = 0;
-    int curr_element = 0;
-    auto buff = *buff_ptr;
-
-    cout << "Starting at buffer" << endl;
-    
-    while(curr_element < buff->curr_size_) {
-        cout << "Element " << total_elements << ": (" << buff->buffer_[curr_element].key << ", " << buff->buffer_[curr_element].value << ")" << endl;
-        ++curr_element;
-        ++total_elements;
-    }
-
-    curr_element = 0;
-    level* curr_level = buff->level1ptr_;
-    for (int i = 0; i < MAX_LEVELS; ++i) {
-        cout << "=====Printing data at level " << i + 1 << " =======" << endl;
-
-        while (curr_element < curr_level->curr_size_) {
-            cout << "Element " << total_elements << ": (" << curr_level->sstable_[curr_element].key << ", " << curr_level->sstable_[curr_element].value << ")" << endl;
-            ++curr_element;
-            ++total_elements;
-        }
-
-        curr_level = curr_level->next_;
-        curr_element = 0;
-    }
+    cout << "Need to rewrite print database function!" << endl;
 }
 
 
@@ -545,39 +533,66 @@ public:
         }
 
 
-        // if not found in buffer, then do binary search across each level
+        // if not found in buffer, then search across each LEVEL#.data file
+        bool result_found = false;
+        int result;
         for (int i = 1; i <= MAX_LEVELS; ++i) {
             auto curr_level_ptr = levels_[i];
 
-            int l = 0;
-            int r = curr_level_ptr->curr_size_ - 1;
+            int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+            if (curr_fd == -1) {
+                cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+                exit(0);
+            }
+            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            if (new_curr_sstable == MAP_FAILED)
+            {
+                cout << "mmap() on the current level's file failed! Exiting program" << endl;
+                close(curr_fd);
+                exit(0);
+            }
 
-            while (l <= r) {
-                int midpoint = (l + r) / 2;
-                if (curr_level_ptr->sstable_[midpoint].key == key) {
-
+            for (int j = 0; j < levels_[i]->curr_size_; ++j) {
+                if (new_curr_sstable[j].key == key) {
                     // check if deleted here, otherwise, return it's value 
-                    if (curr_level_ptr->sstable_[midpoint].deleted) {
+                    if (new_curr_sstable[j].deleted) {
                         // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was DELETED so NOT FOUND!" << endl;
                         if (!called_from_range) {
                             cout << endl; // print empty line for deleted key
                         }
-                        return -1;
-                    }
-
-                    // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
-                    if (!called_from_range) {
-                        cout << curr_level_ptr->sstable_[midpoint].value << endl;
+                        result_found = true;
+                        result = -1;
                     } else {
-                        cout << key << ":" << curr_level_ptr->sstable_[midpoint].value << " ";
+                        // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
+                        if (!called_from_range) {
+                            cout << new_curr_sstable[j].value << endl;
+                        } else {
+                            cout << key << ":" << new_curr_sstable[j].value << " ";
+                        }
+                        result_found = true;
+                        result = new_curr_sstable[j].value;
                     }
-                    return curr_level_ptr->sstable_[midpoint].value;
-                } else if (curr_level_ptr->sstable_[midpoint].key < key) {
-                    l = midpoint + 1;
-                } else {
-                    r = midpoint - 1;
+                }
+
+                if (result_found) {
+                    break;
                 }
             }
+
+            // munmap the file we just mmap()'d
+            int rflag = munmap(new_curr_sstable, levels_[i]->file_capacity_bytes_);
+            if (rflag == -1)
+            {
+                printf("Unable to munmap.\n");
+                exit(0);
+            }
+            close(curr_fd);
+
+
+            if (result_found) {
+                return result;
+            }
+
         }
 
         // cout << "Key: " << key << " WAS NOT FOUND!" << endl;
