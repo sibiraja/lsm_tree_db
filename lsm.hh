@@ -43,7 +43,7 @@ public:
     level* next_ = nullptr;
 
     string disk_file_name_;
-    int file_capacity_bytes_;
+    int max_file_size;
 
     level(int capacity, int curr_level) {
         capacity_ = capacity;
@@ -54,7 +54,7 @@ public:
 
         // NEW DISK STORAGE IMPLEMENTATION CODE
         disk_file_name_ = "LEVEL" + to_string(curr_level_) + ".data";
-        file_capacity_bytes_ = 4096 * curr_level_;
+        max_file_size = 4096 * curr_level_;
 
         // in case we already have data for this level, udpate the curr_size count using the level metadata file and re-construct bloom filters and fence pointers
         struct stat file_exists;
@@ -72,7 +72,7 @@ public:
             }
 
             /* Moving the file pointer to the end of the file*/
-            int rflag = lseek(fd, file_capacity_bytes_-1, SEEK_SET);
+            int rflag = lseek(fd, max_file_size-1, SEEK_SET);
             
             if(rflag == -1)
             {
@@ -90,22 +90,22 @@ public:
                 exit(0);
             }
 
-            lsm_data* curr_level_data = (lsm_data*) mmap(0, file_capacity_bytes_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            lsm_data* curr_level_data = (lsm_data*) mmap(0, max_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
             if (curr_level_data == MAP_FAILED)
             {
                 close(fd);
                 printf("Mmap failed.\n");
                 exit(0);
             }
-            memset(curr_level_data, 0, file_capacity_bytes_);
-            rflag = msync(curr_level_data, file_capacity_bytes_, MS_SYNC);
+            memset(curr_level_data, 0, max_file_size);
+            rflag = msync(curr_level_data, max_file_size, MS_SYNC);
 
             if(rflag == -1)
             {
                 printf("Unable to msync.\n");
                 exit(0);
             }
-            rflag = munmap(curr_level_data, file_capacity_bytes_);
+            rflag = munmap(curr_level_data, max_file_size);
             if(rflag == -1)
             {
                 printf("Unable to munmap.\n");
@@ -141,7 +141,7 @@ public:
                 exit(0);
             }
             
-            lsm_data* curr_file_ptr = (lsm_data*) mmap(0,file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            lsm_data* curr_file_ptr = (lsm_data*) mmap(0,max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
             if (curr_file_ptr == MAP_FAILED)
             {
                 cout << "mmap() on the current level's file failed! Exiting program" << endl;
@@ -149,9 +149,9 @@ public:
                 exit(0);
             }
 
-            memset(curr_file_ptr, 0, file_capacity_bytes_);
-            int rflag = msync(curr_file_ptr, file_capacity_bytes_, MS_SYNC);
-            rflag = munmap(curr_file_ptr, file_capacity_bytes_);
+            memset(curr_file_ptr, 0, max_file_size);
+            int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
+            rflag = munmap(curr_file_ptr, max_file_size);
             if(rflag == -1)
             {
                 printf("Unable to munmap.\n");
@@ -190,7 +190,7 @@ public:
                 cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Exiting program" << endl;
                 exit(0);
             }
-            new_child_data = (lsm_data*) mmap(0, levels_[child_level]->file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
+            new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
 
             if (new_child_data == MAP_FAILED)
             {
@@ -206,7 +206,7 @@ public:
             cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
             exit(0);
         }
-        lsm_data* new_curr_sstable = (lsm_data*) mmap(0, file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+        lsm_data* new_curr_sstable = (lsm_data*) mmap(0, max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
         if (new_curr_sstable == MAP_FAILED)
         {
             cout << "mmap() on the current level's file failed! Exiting program" << endl;
@@ -224,7 +224,7 @@ public:
         }
 
         /* Moving the file pointer to the end of the file*/
-        int rflag = lseek(temp_fd, file_capacity_bytes_-1, SEEK_SET);
+        int rflag = lseek(temp_fd, max_file_size-1, SEEK_SET);
         
         if(rflag == -1)
         {
@@ -242,7 +242,7 @@ public:
             exit(0);
         }
 
-        lsm_data* new_temp_sstable = (lsm_data*) mmap(0, file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, temp_fd, 0);
+        lsm_data* new_temp_sstable = (lsm_data*) mmap(0, max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, temp_fd, 0);
         if (new_temp_sstable == MAP_FAILED)
         {
             cout << "mmap() on the current level's file failed! Exiting program" << endl;
@@ -347,12 +347,12 @@ public:
         {
             /*Syncing the contents of the memory with file, flushing the pages to disk*/
 
-            rflag = msync(new_temp_sstable, file_capacity_bytes_, MS_SYNC);
+            rflag = msync(new_temp_sstable, max_file_size, MS_SYNC);
             if(rflag == -1)
             {
                 printf("Unable to msync.\n");
             }
-            rflag = munmap(new_temp_sstable, file_capacity_bytes_);
+            rflag = munmap(new_temp_sstable, max_file_size);
             if(rflag == -1)
             {
                 printf("Unable to munmap.\n");
@@ -363,7 +363,7 @@ public:
         
         // munmap child
         if (child_fd != -1) {
-            int child_rflag = munmap(new_child_data, levels_[child_level]->file_capacity_bytes_);
+            int child_rflag = munmap(new_child_data, levels_[child_level]->max_file_size);
             if(child_rflag == -1)
             {
                 printf("Unable to munmap child's file.\n");
@@ -373,7 +373,7 @@ public:
         }
 
         // munmap curr level file
-        rflag = munmap(new_curr_sstable, file_capacity_bytes_);
+        rflag = munmap(new_curr_sstable, max_file_size);
         if(rflag == -1)
         {
             printf("Unable to munmap current level's file.\n");
@@ -597,7 +597,7 @@ public:
                 cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
                 exit(0);
             }
-            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
             if (new_curr_sstable == MAP_FAILED)
             {
                 cout << "mmap() on the current level's file failed! Exiting program" << endl;
@@ -633,7 +633,7 @@ public:
             }
 
             // munmap the file we just mmap()'d
-            int rflag = munmap(new_curr_sstable, levels_[i]->file_capacity_bytes_);
+            int rflag = munmap(new_curr_sstable, levels_[i]->max_file_size);
             if (rflag == -1)
             {
                 printf("Unable to munmap.\n");
@@ -722,7 +722,7 @@ public:
                 cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
                 exit(0);
             }
-            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
             if (new_curr_sstable == MAP_FAILED)
             {
                 cout << "mmap() on the current level's file failed! Exiting program" << endl;
@@ -749,7 +749,7 @@ public:
             terminal_output.push_back(curr_level_contents);
 
             // munmap the file we just mmap()'d
-            int rflag = munmap(new_curr_sstable, levels_[i]->file_capacity_bytes_);
+            int rflag = munmap(new_curr_sstable, levels_[i]->max_file_size);
             if (rflag == -1)
             {
                 printf("Unable to munmap.\n");
