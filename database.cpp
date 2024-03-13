@@ -69,10 +69,10 @@ int main() {
                 // TODO: need to implement printStats() function in `lsm.hh` once bloom filters and fence pointers are integrated
                 db->printStats();
                 break;
-            
-            // e for exiting
-            case 'e':
+            case 'f':
                 db->flush_buffer();
+                break;
+            case 'e':
                 exit(0);
             default:
                 cout << "Unknown command: " << command << endl;

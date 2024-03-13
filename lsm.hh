@@ -129,7 +129,7 @@ public:
 
         // check for a potential cascade of merges
         if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
-            cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
+            // cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
             next_->merge(curr_size_, curr_level_);
 
             // reset data for this level as it has been merged with another level already
@@ -157,7 +157,7 @@ public:
                 printf("Unable to munmap.\n");
             }
             close(curr_fd);
-            cout << "Memset level " << curr_level_ << "'s file to all 0's bc it has been merged with another level!" << endl;
+            // cout << "Memset level " << curr_level_ << "'s file to all 0's bc it has been merged with another level!" << endl;
         } else if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ == MAX_LEVELS) {
             cout << "ERROR: CAN'T CASCADE MERGE, DATABASE IS FULL!" << endl;
             exit(0);
@@ -476,7 +476,7 @@ public:
         // if `level_metadata.data` file doesn't exist, create it and memset() it to all 0's to represent curr_size is 0 for all levels when we have no data yet
         struct stat metadata_file_exists;
         if (stat (metadata_filename, &metadata_file_exists) != 0) {
-            cout << "global metadata file DNE, so making a new one and starting database from fresh!" << endl;
+            // cout << "global metadata file DNE, so making a new one and starting database from fresh!" << endl;
         
             int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
             if (fd == -1) {
