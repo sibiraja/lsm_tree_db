@@ -27,10 +27,6 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
     }
 }
 
-void printStats() {
-    cout << "printStats() not implemented yet!" << endl;
-}
-
 int main() {
     lsm_tree* db = new lsm_tree();
     
@@ -71,7 +67,7 @@ int main() {
             }
             case 's':
                 // TODO: need to implement printStats() function in `lsm.hh` once bloom filters and fence pointers are integrated
-                // printStats();
+                db->printStats();
                 break;
             default:
                 cout << "Unknown command: " << command << endl;

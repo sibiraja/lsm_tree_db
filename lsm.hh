@@ -48,7 +48,7 @@ public:
         capacity_ = capacity;
         curr_level_ = curr_level;
 
-        // cout << "Created level " << curr_level_ << " with capacity " << capacity_ << endl;
+        // cout << "Creating level " << curr_level_ << " with capacity " << capacity_ << endl;
 
 
         // NEW DISK STORAGE IMPLEMENTATION CODE
@@ -59,47 +59,59 @@ public:
         struct stat file_exists;
         if (stat (disk_file_name_.c_str(), &file_exists) == 0) {
             curr_size_ = metadata_file_ptr[curr_level_];
+            // cout << "On database startup, level " << curr_level_ << " already has " << curr_size_ << " data entries!" << endl;
             bf_fp_construct();
-            // cout << disk_file_name_ << " exists!" << endl; 
-        } else {
-            // cout << disk_file_name_ << " DNE!" << endl;
-        }
+        } 
+        // else, create a file for this level
+        else {
+            int fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+            if (fd == -1) {
+                cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+                exit(0);
+            }
 
-        // open LEVEL#.data file (or create it if it DNE) -- Note that we need this line of code in both cases, so it's fine to have it below the if-else statement above
+            /* Moving the file pointer to the end of the file*/
+            int rflag = lseek(fd, file_capacity_bytes_-1, SEEK_SET);
+            
+            if(rflag == -1)
+            {
+                cout << "Lseek failed! Exiting program" << endl;
+                close(fd);
+                exit(0);
+            }
 
-        int fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-        if (fd == -1) {
-            cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
-            exit(0);
-        }
+            /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+            rflag = write(fd, "", 1);
+            if(rflag == -1)
+            {
+                cout << "Writing empty string failed! Exiting program" << endl;
+                close(fd);
+                exit(0);
+            }
 
-        /* Moving the file pointer to the end of the file*/
-        int rflag = lseek(fd, file_capacity_bytes_-1, SEEK_SET);
-        
-        if(rflag == -1)
-        {
-            cout << "Lseek failed! Exiting program" << endl;
+            lsm_data* curr_level_data = (lsm_data*) mmap(0, file_capacity_bytes_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            if (curr_level_data == MAP_FAILED)
+            {
+                close(fd);
+                printf("Mmap failed.\n");
+                exit(0);
+            }
+            memset(curr_level_data, 0, file_capacity_bytes_);
+            rflag = msync(curr_level_data, file_capacity_bytes_, MS_SYNC);
+
+            if(rflag == -1)
+            {
+                printf("Unable to msync.\n");
+                exit(0);
+            }
+            rflag = munmap(curr_level_data, file_capacity_bytes_);
+            if(rflag == -1)
+            {
+                printf("Unable to munmap.\n");
+                exit(0);
+            }
             close(fd);
-            exit(0);
         }
-
-        /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
-        rflag = write(fd, "", 1);
-        if(rflag == -1)
-        {
-            cout << "Writing empty string failed! Exiting program" << endl;
-            close(fd);
-            exit(0);
-        }
-
-        // TODO: mmap the LEVEL#.data file and assign sstable_ to it. --> maybe create a new_sstable_ variable and first test it to make sure I don't break any old functionality?
-        
-
-        // i think i don't need to memset right now, but perhaps might need to. obv is good practice, but i think it is not needed since it might
-        // mess up if i memset the file when it already contains old data from previous database runs.
-
-        close(fd);
-        // END NEW DISK STORAGE IMPLEMENTATION CODE
 
     }
 
@@ -438,12 +450,6 @@ public:
 
 
 
-void print_database(buffer** buff_ptr) {
-    cout << "Need to rewrite print database function!" << endl;
-}
-
-
-
 class lsm_tree {
 public:
     buffer* buffer_ptr_;
@@ -451,41 +457,67 @@ public:
     lsm_tree() {
         // NEW DISK STORAGE IMPLEMENTATION CODE
         // if `level_metadata.data` file doesn't exist, create it and memset() it to all 0's to represent curr_size is 0 for all levels when we have no data yet
-        int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
-        if (fd == -1) {
-            cout << "Error in opening / creating global `level_metadata` file! Exiting program" << endl;
-            exit(0);
-        }
-
-        /* Moving the file pointer to the end of the file*/
-        int rflag = lseek(fd, (MAX_LEVELS * sizeof(int))-1, SEEK_SET);
+        struct stat metadata_file_exists;
+        if (stat (metadata_filename, &metadata_file_exists) != 0) {
+            cout << "global metadata file DNE, so making a new one and starting database from fresh!" << endl;
         
-        if(rflag == -1)
-        {
-            cout << "Lseek failed! Exiting program" << endl;
-            close(fd);
-            exit(0);
-        }
+            int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
+            if (fd == -1) {
+                cout << "Error in opening / creating global `level_metadata` file! Exiting program" << endl;
+                exit(0);
+            }
 
-        /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
-        rflag = write(fd, "", 1);
-        if(rflag == -1)
-        {
-            cout << "Writing empty string failed! Exiting program" << endl;
-            close(fd);
-            exit(0);
-        }
+            /* Moving the file pointer to the end of the file*/
+            int rflag = lseek(fd, (MAX_LEVELS * sizeof(int))-1, SEEK_SET);
+            
+            if(rflag == -1)
+            {
+                cout << "Lseek failed! Exiting program" << endl;
+                close(fd);
+                exit(0);
+            }
 
-        // memory map the metadata file contents into process memory so we can access it when inside any level::function()
-        metadata_file_ptr = (int*) mmap(0,(MAX_LEVELS * sizeof(int)), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-        if (metadata_file_ptr == MAP_FAILED)
-        {
-            cout << "mmap() on the metadata file failed! Exiting program" << endl;
-            close(fd);
-            exit(0);
-        }
+            /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+            rflag = write(fd, "", 1);
+            if(rflag == -1)
+            {
+                cout << "Writing empty string failed! Exiting program" << endl;
+                close(fd);
+                exit(0);
+            }
 
-        memset(metadata_file_ptr, 0, metadata_size);
+            // memory map the metadata file contents into process memory so we can access it when inside any level::function()
+            metadata_file_ptr = (int*) mmap(0,(MAX_LEVELS * sizeof(int)), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+            if (metadata_file_ptr == MAP_FAILED)
+            {
+                cout << "mmap() on the metadata file failed! Exiting program" << endl;
+                close(fd);
+                exit(0);
+            }
+
+            memset(metadata_file_ptr, 0, metadata_size);
+            rflag = msync(metadata_file_ptr, metadata_size, MS_SYNC);
+            if (rflag == -1) {
+                cout << "unable to msync metadata file" << endl;
+                exit(0);
+            }
+        }
+        // if file already exists, just mmap it
+        else {
+            int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
+            if (fd == -1) {
+                cout << "Error in opening / creating global `level_metadata` file! Exiting program" << endl;
+                exit(0);
+            }
+
+            metadata_file_ptr = (int*) mmap(0,(MAX_LEVELS * sizeof(int)), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+            if (metadata_file_ptr == MAP_FAILED)
+            {
+                cout << "mmap() on the metadata file failed! Exiting program" << endl;
+                close(fd);
+                exit(0);
+            }
+        }
 
         // END NEW DISK STORAGE IMPLEMENTATION CODE
 
@@ -627,5 +659,48 @@ public:
         // if not found in buffer, then just insert a new key value struct with the deleted flag set as true
         insert({key, 0, true});
         return;
+    }
+
+    // TODO: figure out logic for print stats function, right now this is just for my own testing purposes
+    void printStats() {
+
+        // print contents of buffer
+        cout << "===Buffer contents======" << endl;
+        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
+            auto curr_data = buffer_ptr_->buffer_[i];
+            cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
+        }
+
+        // print contents of each level's disk file by mmap and munmap
+        for (int i = 1; i <= MAX_LEVELS; ++i) {
+            cout << "===Level " << i << " contents===" << endl;
+            auto curr_level_ptr = levels_[i];
+
+            int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+            if (curr_fd == -1) {
+                cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+                exit(0);
+            }
+            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->file_capacity_bytes_, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            if (new_curr_sstable == MAP_FAILED)
+            {
+                cout << "mmap() on the current level's file failed! Exiting program" << endl;
+                close(curr_fd);
+                exit(0);
+            }
+
+            for (int j = 0; j < levels_[i]->curr_size_; ++j) {
+                cout << new_curr_sstable[j].key << ":" << new_curr_sstable[j].value << ":L" << i << endl;
+            }
+
+            // munmap the file we just mmap()'d
+            int rflag = munmap(new_curr_sstable, levels_[i]->file_capacity_bytes_);
+            if (rflag == -1)
+            {
+                printf("Unable to munmap.\n");
+                exit(0);
+            }
+            close(curr_fd);
+        }
     }
 };
