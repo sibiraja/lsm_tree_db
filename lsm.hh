@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <cstring>
+#include <set>
 
 #define INITIAL_LEVEL_CAPACITY  10
 #define SIZE_RATIO              2
@@ -664,16 +665,36 @@ public:
     // TODO: figure out logic for print stats function, right now this is just for my own testing purposes
     void printStats() {
 
+        // main logic behind this is to iterate from buffer to larger levels, and keep track of valid and deleted keys using sets to correctly count logical pairs, but
+        // this can get out of hand real fast once our database has millions of keys that it has stored, so `TODO: come back to this later to scale better`
+        vector<string> terminal_output;
+        terminal_output.push_back(""); // push back empty string which we can go back and later edit to store the count of logical key value pairs
+        terminal_output.push_back(""); // same logic as above, this stores the count of entries at each level
+        set<int> deleted_keys;
+        set<int> valid_keys;
+
         // print contents of buffer
-        cout << "===Buffer contents======" << endl;
+        string buffer_contents = "";
+        // cout << "===Buffer contents======" << endl;
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             auto curr_data = buffer_ptr_->buffer_[i];
-            cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
+            string temp = to_string(curr_data.key) + ":" + to_string(curr_data.value) + ":L0 ";
+            buffer_contents += temp;
+
+            // note that buffer will never have duplicate keys, so no need to cross-reference across the deleted and valid sets here
+            if (curr_data.deleted) {
+                deleted_keys.insert(curr_data.key);
+            } else {
+                valid_keys.insert(curr_data.key);
+            }
+            // cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
         }
+        terminal_output[1] += "LVL0: " + to_string(buffer_ptr_->curr_size_) + ", ";
+        terminal_output.push_back(buffer_contents);
 
         // print contents of each level's disk file by mmap and munmap
         for (int i = 1; i <= MAX_LEVELS; ++i) {
-            cout << "===Level " << i << " contents===" << endl;
+            // cout << "===Level " << i << " contents===" << endl;
             auto curr_level_ptr = levels_[i];
 
             int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
@@ -689,9 +710,23 @@ public:
                 exit(0);
             }
 
+            string curr_level_contents = "";
             for (int j = 0; j < levels_[i]->curr_size_; ++j) {
-                cout << new_curr_sstable[j].key << ":" << new_curr_sstable[j].value << ":L" << i << endl;
+                string temp = to_string(new_curr_sstable[j].key) + ":" + to_string(new_curr_sstable[j].value) + ":L" + to_string(i) + " ";
+                curr_level_contents += temp;
+                // cout << new_curr_sstable[j].key << ":" << new_curr_sstable[j].value << ":L" << i << endl;
+
+                // if current key-value pair is not deleted and the key has not been previously deleted (due to an earlier level), add it to valid keys set
+                if (!new_curr_sstable[j].deleted && deleted_keys.find(new_curr_sstable[j].key) == deleted_keys.end()) {
+                    valid_keys.insert(new_curr_sstable[j].key);
+                }
+                // else if it is deleted, only add it to the deleted set if not already in valid set (due to an earlier level)
+                else if (new_curr_sstable[j].deleted && valid_keys.find(new_curr_sstable[j].key) == valid_keys.end()) {
+                    deleted_keys.insert(new_curr_sstable[j].key);
+                }
             }
+            terminal_output[1] += "LVL" + to_string(i) + ": " + to_string(levels_[i]->curr_size_) + ", ";
+            terminal_output.push_back(curr_level_contents);
 
             // munmap the file we just mmap()'d
             int rflag = munmap(new_curr_sstable, levels_[i]->file_capacity_bytes_);
@@ -701,6 +736,16 @@ public:
                 exit(0);
             }
             close(curr_fd);
+        }
+
+        terminal_output[0] = "Logical Pairs: " + to_string(valid_keys.size());
+
+        for (int i = 0; i < terminal_output.size(); ++i) {
+            cout << terminal_output[i] << endl;
+            // empty line to match formatting as per project requirements document
+            if (i >= 2) {
+                cout << endl;
+            }
         }
     }
 };
