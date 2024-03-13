@@ -175,7 +175,7 @@ public:
         int child_fd = -1;
         lsm_data* new_child_data;
         if (child_level == 0) {
-            cout << "child is buffer, no need to mmap()!" << endl;
+            // cout << "child is buffer, no need to mmap()!" << endl;
             assert(buffer_ptr != nullptr);
             new_child_data = *buffer_ptr;
         } 
@@ -183,7 +183,7 @@ public:
         // mmap child's file if it is a level and not the buffer
         else {
             assert(buffer_ptr == nullptr);
-            cout << "child is a level, mmap()'ing!" << endl;
+            // cout << "child is a level, mmap()'ing!" << endl;
             // new_child_data = mmap the level's disk file
             child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
             if (child_fd == -1) {
@@ -213,7 +213,7 @@ public:
             close(child_fd);
             exit(0);
         }
-        cout << "mmap()'ed the current level's file!" << endl;
+        // cout << "mmap()'ed the current level's file!" << endl;
 
 
         // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
@@ -249,7 +249,7 @@ public:
             close(temp_fd);
             exit(0);
         }
-        cout << "mmap()'ed the temp data file!" << endl;
+        // cout << "mmap()'ed the temp data file!" << endl;
 
 
         // merge 2 sorted arrays into 1 sorted array
@@ -368,7 +368,7 @@ public:
             {
                 printf("Unable to munmap child's file.\n");
             }
-            cout << "child is a level, just munmap()'ed!" << endl;
+            // cout << "child is a level, just munmap()'ed!" << endl;
             close(child_fd);
         }
 
@@ -378,19 +378,21 @@ public:
         {
             printf("Unable to munmap current level's file.\n");
         }
-        cout << "munmap()'ed the current level's file!" << endl;
+        // cout << "munmap()'ed the current level's file!" << endl;
         close(curr_fd);
 
+        
+        // NOTE: KEEP THE BELOW IF-ELSE CHECKS BC THE STATEMENTS INSIDE THE IF CONDITIONS NEED TO EXECUTE!!!!!
         // DELETE original curr level file, rename temp data file
         if (remove(disk_file_name_.c_str()) == 0) {
-            cout << disk_file_name_ << " deleted successfully" << endl;
+            // cout << disk_file_name_ << " deleted successfully" << endl;
         } else {
             cout << "Error in deleting " << disk_file_name_ << endl;
             exit(0);
         }
 
         if (rename("TEMP.data", disk_file_name_.c_str()) == 0) {
-            cout << "Successfully renamed temp file to " << disk_file_name_ << endl;
+            // cout << "Successfully renamed temp file to " << disk_file_name_ << endl;
         } else {
             cout << "Error in renaming temp file" << endl;
             exit(0);
@@ -446,6 +448,20 @@ public:
         ++curr_size_;
         // cout << "Inserted (" << kv_pair.key << ", " << kv_pair.value << ")! curr_size is now " << curr_size_ << endl;
         return true;
+    }
+
+    void flush() {
+        // Sort the buffer before merging
+        std::sort(buffer_, buffer_ + curr_size_, [](const lsm_data& a, const lsm_data& b) {
+            return a.key < b.key;
+        });
+
+        // Merge the sorted buffer into the LSM tree
+        level1ptr_->merge(curr_size_, 0, &buffer_);
+        
+        curr_size_ = 0;
+        delete[] buffer_;
+        buffer_ = new lsm_data[BUFFER_CAPACITY];
     }
 };
 
@@ -540,6 +556,10 @@ public:
     bool insert(lsm_data kv_pair) {
         buffer_ptr_->insert(kv_pair);
         return true;
+    }
+
+    void flush_buffer() {
+        buffer_ptr_->flush();
     }
 
     // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
