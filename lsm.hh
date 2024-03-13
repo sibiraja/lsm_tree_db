@@ -7,12 +7,12 @@
 #include <cstring>
 #include <set>
 
-#define INITIAL_LEVEL_CAPACITY  10
-#define SIZE_RATIO              2
-#define BUFFER_CAPACITY         5
-#define MAX_LEVELS              10
-#define NUM_ENTRIES_PER_PAGE    341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes 
-#define LSM_DATA_SIZE           12
+#define INITIAL_LEVEL_CAPACITY      10
+#define SIZE_RATIO                  2
+#define BUFFER_CAPACITY             5
+#define MAX_LEVELS                  10
+#define FENCE_PTR_EVERY_K_ENTRIES   341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
+#define LSM_DATA_SIZE               12
 
 // Global metadata variables
 const char* metadata_filename = "level_metadata.data";
@@ -761,10 +761,12 @@ public:
         terminal_output[0] = "Logical Pairs: " + to_string(valid_keys.size());
 
         for (int i = 0; i < terminal_output.size(); ++i) {
-            cout << terminal_output[i] << endl;
-            // empty line to match formatting as per project requirements document
-            if (i >= 2) {
-                cout << endl;
+            if (terminal_output[i].length() > 0) {
+                cout << terminal_output[i] << endl;
+                // empty line to match formatting as per project requirements document
+                if (i >= 1) {
+                    cout << endl;
+                }
             }
         }
     }
