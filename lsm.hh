@@ -7,7 +7,7 @@
 #include <cstring>
 #include <set>
 
-#define INITIAL_LEVEL_CAPACITY      10
+#define INITIAL_LEVEL_CAPACITY      341
 #define SIZE_RATIO                  2
 #define BUFFER_CAPACITY             5
 #define MAX_LEVELS                  10
