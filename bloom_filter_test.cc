@@ -76,6 +76,14 @@ int main()
             std::cout << "BF falsely contains: " << i << std::endl;
          }
       }
+
+      filter.clear();
+
+      if (filter.contains(1)) {
+        std::cout << "Bloom filter was not cleared correctly!" << std::endl;
+      } else {
+        std::cout << "Bloom filter was successfully cleared!" << std::endl;
+      }
    }
 
    return 0;

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <set>
+#include "bloom_filter.hh"
 
 #define INITIAL_LEVEL_CAPACITY      341
 #define SIZE_RATIO                  2
@@ -49,6 +50,7 @@ public:
     level* next_ = nullptr;
     fence_ptr* fp_array_ = nullptr;
     int num_fence_ptrs_ = 0; // will store how many fence ptrs we will have by doing curr_size_ / FENCE_PTR_EVERY_K_ENTRIES
+    bloom_filter* filter_ = nullptr; // explicitly set to nullptr so calling delete on this if it hasn't been set to an actual bloom filter object won't break our code (deleting nullptr is safe)
 
     string disk_file_name_;
     int max_file_size;
@@ -132,8 +134,8 @@ public:
     }
 
 
-    // This function should re-construct bloom filters and fence pointers for a given level whenever we have new data at this level 
-    void bf_fp_construct() {
+    // This function should re-construct fence pointers for a given level whenever we have new data at this level 
+    void fp_construct() {
         // Open the level's data file
         int fd = open(disk_file_name_.c_str(), O_RDONLY);
         if (fd == -1) {
@@ -180,6 +182,76 @@ public:
         //     cout << endl;
         // }
 
+    }
+
+
+    // This function should construct bloom filters AND fence pointers --> only called on database startup in case we already have data files that we want to initialize
+    // our database with, so we construct bloom filters and fence pointers on startup
+    void bf_fp_construct() {
+        // when we start up the database and we have files for levels but those files contain no data, we don't want to construct bloom filters or fence pointers,
+        // so simply return --> this was also giving me an error since having `parameters.projected_element_count = 0` was not handled correctly in bloom filter library
+        if (curr_size_ == 0) {
+            return;
+        }
+
+        // Bloom filter set up
+        bloom_parameters parameters;
+        parameters.projected_element_count = curr_size_; // How many elements roughly do we expect to insert?
+        parameters.false_positive_probability = 0.0001; // Maximum tolerable false positive probability? (0,1) --> 1 in 10000
+        parameters.random_seed = 0xA5A5A5A5; // Simple randomizer (optional)
+        if (!parameters)
+        {
+            assert(curr_size_ == 0);
+            cout << "Bloom filter error on startup is happening on level " << this->curr_level_ << endl;
+            std::cout << "Error - Invalid set of bloom filter parameters!" << std::endl;
+            exit(0);
+        }
+        parameters.compute_optimal_parameters();
+        delete filter_; // delete previous bloom filter we may have had
+        filter_ = new bloom_filter(parameters);
+
+        // Open the level's data file
+        int fd = open(disk_file_name_.c_str(), O_RDONLY);
+        if (fd == -1) {
+            cout << "Error opening file: " << disk_file_name_ << endl;
+            return;
+        }
+
+        // Map the entire file
+        lsm_data* data = (lsm_data*) mmap(NULL, max_file_size, PROT_READ, MAP_SHARED, fd, 0);
+        if (data == MAP_FAILED) {
+            close(fd);
+            cout << "mmap failed" << endl;
+            return;
+        }
+
+        // dynamically allocate memory for the fence pointers array
+        fp_array_ = new fence_ptr[num_fence_ptrs_];
+
+        // Loop to construct fence pointers
+        for (int i = 0; i < num_fence_ptrs_; i++) {
+            int segment_start_index = i * FENCE_PTR_EVERY_K_ENTRIES;
+            int segment_end_index = (i + 1) * FENCE_PTR_EVERY_K_ENTRIES - 1;
+            // Adjust for the last segment which might not be full
+            if (segment_end_index >= curr_size_) {
+                segment_end_index = curr_size_ - 1;
+            }
+
+            int segment_offset = segment_start_index * LSM_DATA_SIZE;
+            fp_array_[i].min_key = data[segment_start_index].key;
+            fp_array_[i].max_key = data[segment_end_index].key;
+            fp_array_[i].offset = segment_offset;
+        }
+
+
+        // Loop to insert all elements into bloom filter
+        for (int i = 0; i < curr_size_; ++i) {
+            filter_->insert(data[i].key);
+        }
+
+        // Don't forget to unmap and close the file descriptor
+        munmap(data, max_file_size);
+        close(fd);
     }
     
 
@@ -312,6 +384,20 @@ public:
         // cout << "mmap()'ed the temp data file!" << endl;
 
 
+        // Bloom filter set up
+        bloom_parameters parameters;
+        parameters.projected_element_count = curr_size_ + num_elements_to_merge; // How many elements roughly do we expect to insert?
+        parameters.false_positive_probability = 0.0001; // Maximum tolerable false positive probability? (0,1) --> 1 in 10000
+        parameters.random_seed = 0xA5A5A5A5; // Simple randomizer (optional)
+        if (!parameters)
+        {
+            std::cout << "Error - Invalid set of bloom filter parameters!" << std::endl;
+            exit(0);
+        }
+        parameters.compute_optimal_parameters();
+        delete filter_; // delete previous bloom filter we may have had
+        filter_ = new bloom_filter(parameters);
+
         // merge 2 sorted arrays into 1 sorted array
         int my_ptr = 0;
         int child_ptr = 0;
@@ -345,13 +431,16 @@ public:
 
             if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
+                filter_->insert(new_curr_sstable[my_ptr].key);
                 ++my_ptr;
             } else if (new_curr_sstable[my_ptr].key > new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
+                filter_->insert(new_child_data[child_ptr].key);
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
                 new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
+                filter_->insert(new_child_data[child_ptr].key);
                 ++child_ptr;
                 ++my_ptr;
             }
@@ -370,6 +459,7 @@ public:
             // assert(sstable_[my_ptr].deleted == false);
 
             new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
+            filter_->insert(new_curr_sstable[my_ptr].key);
             ++my_ptr;
             ++temp_sstable_ptr;
         }
@@ -385,6 +475,7 @@ public:
             // assert(child_data[child_ptr].deleted == false);
 
             new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
+            filter_->insert(new_child_data[child_ptr].key);
             ++child_ptr;
             ++temp_sstable_ptr;
         }
@@ -466,7 +557,7 @@ public:
         }
         // cout << "A merge just happened in level " << curr_level_ << ", there are num_fence_ptrs_: " << num_fence_ptrs_ << endl;
 
-        bf_fp_construct();
+        fp_construct();
 
         return true;
     }
@@ -633,7 +724,7 @@ public:
     }
 
     
-    int get(int key, bool called_from_range = false) {
+    void get(int key, bool called_from_range = false) {
         // do linear search on the buffer (since buffer isn't sorted)
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             if (buffer_ptr_->buffer_[i].key == key) {
@@ -642,7 +733,7 @@ public:
                     if (!called_from_range) {
                         cout << endl; // print empty line for deleted key
                     }
-                    return -1;
+                    return;
                 }
 
                 // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
@@ -651,7 +742,7 @@ public:
                 } else {
                     cout << key << ":" << buffer_ptr_->buffer_[i].value << " ";
                 }
-                return buffer_ptr_->buffer_[i].value;
+                return;
             }
         }
 
@@ -661,6 +752,12 @@ public:
         int result;
         for (int i = 1; i <= MAX_LEVELS; ++i) {
             auto curr_level_ptr = levels_[i];
+            auto curr_bloom_filter = levels_[i]->filter_;
+            // bloom filter might not have been created yet, so check if it's nullptr as well as if the key is not in the bloom filter
+            if (!curr_bloom_filter || !curr_bloom_filter->contains(key)) {
+                continue;
+            }
+            // cout << "Level " << i << "'s bloom filter contains " << key << endl;
 
             // loop through every fence pointer
             for (int j = 0; j < curr_level_ptr->num_fence_ptrs_; ++j) {
@@ -687,12 +784,12 @@ public:
                     ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
                     if (bytesRead < 0) {
                         cout << "Error reading from file" << endl;
-                        return false;
+                        return;
                     }
 
                     if (bytesRead % sizeof(lsm_data) != 0) {
                         cout << "Did not read a full data entry in pread()!" << endl;
-                        return false;
+                        return;
                     }
 
                     int num_entries_in_segment = bytesRead / sizeof(lsm_data);
@@ -747,7 +844,8 @@ public:
         if (!called_from_range) {
             cout << endl; // print empty line to signify no key was found
         }
-        return result;
+        
+        return;
     }
 
     // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
