@@ -741,53 +741,6 @@ public:
                 break;
             }
 
-            // int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-            // if (curr_fd == -1) {
-            //     cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
-            //     exit(0);
-            // }
-            // lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
-            // if (new_curr_sstable == MAP_FAILED)
-            // {
-            //     cout << "mmap() on the current level's file failed! Exiting program" << endl;
-            //     close(curr_fd);
-            //     exit(0);
-            // }
-
-            // for (int j = 0; j < levels_[i]->curr_size_; ++j) {
-            //     if (new_curr_sstable[j].key == key) {
-            //         // check if deleted here, otherwise, return it's value 
-            //         if (new_curr_sstable[j].deleted) {
-            //             // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was DELETED so NOT FOUND!" << endl;
-            //             if (!called_from_range) {
-            //                 cout << endl; // print empty line for deleted key
-            //             }
-            //             result_found = true;
-            //             result = -1;
-            //         } else {
-            //             // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
-            //             if (!called_from_range) {
-            //                 cout << new_curr_sstable[j].value << endl;
-            //             } else {
-            //                 cout << key << ":" << new_curr_sstable[j].value << " ";
-            //             }
-            //             result_found = true;
-            //             result = new_curr_sstable[j].value;
-            //         }
-            //     }
-
-            //     if (result_found) {
-            //         break;
-            //     }
-            // }
-
-            // close(curr_fd);
-
-
-            // if (result_found) {
-            //     return result;
-            // }
-
         }
 
         // cout << "Key: " << key << " WAS NOT FOUND!" << endl;
