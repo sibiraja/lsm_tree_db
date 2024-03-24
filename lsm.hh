@@ -31,6 +31,12 @@ struct lsm_data {
     bool deleted;
 };
 
+struct fence_ptr {
+    int min_key;
+    int max_key;
+    int offset;
+};
+
 // TODO: just have declarations in this file and move implementation of each function to a `lsm.cpp` file later after initial testing
 
 
@@ -41,6 +47,8 @@ public:
     int curr_level_;
     level* prev_ = nullptr;
     level* next_ = nullptr;
+    fence_ptr* fp_array_ = nullptr;
+    int num_fence_ptrs_ = 0; // will store how many fence ptrs we will have by doing curr_size_ / FENCE_PTR_EVERY_K_ENTRIES
 
     string disk_file_name_;
     int max_file_size;
@@ -61,6 +69,13 @@ public:
         if (stat (disk_file_name_.c_str(), &file_exists) == 0) {
             curr_size_ = metadata_file_ptr[curr_level_];
             // cout << "On database startup, level " << curr_level_ << " already has " << curr_size_ << " data entries!" << endl;
+
+            // calculate number of fence pointers we need
+            num_fence_ptrs_ = curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
+            if (curr_size_ % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+                num_fence_ptrs_ += 1;
+            }
+
             bf_fp_construct();
         } 
         // else, create a file for this level
@@ -119,7 +134,52 @@ public:
 
     // This function should re-construct bloom filters and fence pointers for a given level whenever we have new data at this level 
     void bf_fp_construct() {
-        // TODO: implement this function
+        // Open the level's data file
+        int fd = open(disk_file_name_.c_str(), O_RDONLY);
+        if (fd == -1) {
+            cout << "Error opening file: " << disk_file_name_ << endl;
+            return;
+        }
+
+        // Map the entire file
+        lsm_data* data = (lsm_data*) mmap(NULL, max_file_size, PROT_READ, MAP_SHARED, fd, 0);
+        if (data == MAP_FAILED) {
+            close(fd);
+            cout << "mmap failed" << endl;
+            return;
+        }
+
+        // dynamically allocate memory for the fence pointers array
+        fp_array_ = new fence_ptr[num_fence_ptrs_];
+
+        for (int i = 0; i < num_fence_ptrs_; i++) {
+            int segment_start_index = i * FENCE_PTR_EVERY_K_ENTRIES;
+            int segment_end_index = (i + 1) * FENCE_PTR_EVERY_K_ENTRIES - 1;
+            // Adjust for the last segment which might not be full
+            if (segment_end_index >= curr_size_) {
+                segment_end_index = curr_size_ - 1;
+            }
+
+            int segment_offset = segment_start_index * LSM_DATA_SIZE;
+            fp_array_[i].min_key = data[segment_start_index].key;
+            fp_array_[i].max_key = data[segment_end_index].key;
+            fp_array_[i].offset = segment_offset;
+        }
+
+        // Don't forget to unmap and close the file descriptor
+        munmap(data, max_file_size);
+        close(fd);
+
+
+        // printing fence ptr contents
+        // for (int i = 0; i < num_fence_ptrs_; ++i) {
+        //     cout << "Fence ptr " << i << endl;
+        //     cout << "min_key: " << fp_array_[i].min_key << endl;
+        //     cout << "max_key: " << fp_array_[i].max_key << endl;
+        //     cout << "offset: " << fp_array_[i].offset << endl;
+        //     cout << endl;
+        // }
+
     }
     
 
@@ -398,6 +458,16 @@ public:
             exit(0);
         }
 
+
+        // calculate number of fence pointers we need
+        num_fence_ptrs_ = curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
+        if (curr_size_ % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+            num_fence_ptrs_ += 1;
+        }
+        // cout << "A merge just happened in level " << curr_level_ << ", there are num_fence_ptrs_: " << num_fence_ptrs_ << endl;
+
+        bf_fp_construct();
+
         return true;
     }
 };
@@ -592,59 +662,131 @@ public:
         for (int i = 1; i <= MAX_LEVELS; ++i) {
             auto curr_level_ptr = levels_[i];
 
-            int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-            if (curr_fd == -1) {
-                cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
-                exit(0);
-            }
-            lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
-            if (new_curr_sstable == MAP_FAILED)
-            {
-                cout << "mmap() on the current level's file failed! Exiting program" << endl;
-                close(curr_fd);
-                exit(0);
-            }
+            // loop through every fence pointer
+            for (int j = 0; j < curr_level_ptr->num_fence_ptrs_; ++j) {
+                if (curr_level_ptr->fp_array_[j].min_key <= key && key <= curr_level_ptr->fp_array_[j].max_key) {
 
-            for (int j = 0; j < levels_[i]->curr_size_; ++j) {
-                if (new_curr_sstable[j].key == key) {
-                    // check if deleted here, otherwise, return it's value 
-                    if (new_curr_sstable[j].deleted) {
-                        // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was DELETED so NOT FOUND!" << endl;
-                        if (!called_from_range) {
-                            cout << endl; // print empty line for deleted key
+                    int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+
+                    if (curr_fd == -1) {
+                        cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+                        exit(0);
+                    }
+
+                    lsm_data segment_buffer[341];
+
+                    // Determine the number of entries to read for this segment
+                    int entriesToRead = FENCE_PTR_EVERY_K_ENTRIES;
+                    // If this is the last segment, adjust the number of entries to read
+                    if (j == curr_level_ptr->num_fence_ptrs_ - 1) {
+                        int remainingEntries = curr_level_ptr->curr_size_ - (j * FENCE_PTR_EVERY_K_ENTRIES);
+                        entriesToRead = remainingEntries;
+                    }
+
+                    ssize_t bytesToRead = entriesToRead * sizeof(lsm_data);
+                    ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
+                    if (bytesRead < 0) {
+                        cout << "Error reading from file" << endl;
+                        return false;
+                    }
+
+                    if (bytesRead % sizeof(lsm_data) != 0) {
+                        cout << "Did not read a full data entry in pread()!" << endl;
+                        return false;
+                    }
+
+                    int num_entries_in_segment = bytesRead / sizeof(lsm_data);
+                    // cout << "Read " << num_entries_in_segment << " in curr segment" << endl;
+
+                    // Search through the buffer for the targetKey
+                    for (int i = 0; i < num_entries_in_segment; ++i) {
+                        // cout << "[get()] currently on (" << segment_buffer[i].key << ", " << segment_buffer[i].value << ")" << endl;
+                        if (segment_buffer[i].key == key) {
+                            if (segment_buffer[i].deleted) {
+                                if (!called_from_range) {
+                                    cout << endl; // print empty line for deleted key
+                                }
+                                result_found = true;
+                                result = -1;
+                            }
+                            
+                            // else, key exists and is not deleted, so we print the value
+                            else {
+                                result = segment_buffer[i].value;
+                                result_found = true;
+
+                                if (!called_from_range) {
+                                    cout << result << endl;
+                                } else {
+                                    cout << key << ":" << result << " ";
+                                }
+                            }
                         }
-                        result_found = true;
-                        result = -1;
-                    } else {
-                        // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
-                        if (!called_from_range) {
-                            cout << new_curr_sstable[j].value << endl;
-                        } else {
-                            cout << key << ":" << new_curr_sstable[j].value << " ";
+
+                        // break out of inner most for loop that's iterating over each entry in the fence ptr's segment
+                        if (result_found) {
+                            break;
                         }
-                        result_found = true;
-                        result = new_curr_sstable[j].value;
                     }
                 }
 
+                // break out of middle nested for loop that's iterating over each fence ptr
                 if (result_found) {
                     break;
                 }
             }
 
-            // munmap the file we just mmap()'d
-            int rflag = munmap(new_curr_sstable, levels_[i]->max_file_size);
-            if (rflag == -1)
-            {
-                printf("Unable to munmap.\n");
-                exit(0);
-            }
-            close(curr_fd);
-
-
+            // break out of outer most for loop that's iterating over every level
             if (result_found) {
-                return result;
+                break;
             }
+
+            // int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+            // if (curr_fd == -1) {
+            //     cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+            //     exit(0);
+            // }
+            // lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+            // if (new_curr_sstable == MAP_FAILED)
+            // {
+            //     cout << "mmap() on the current level's file failed! Exiting program" << endl;
+            //     close(curr_fd);
+            //     exit(0);
+            // }
+
+            // for (int j = 0; j < levels_[i]->curr_size_; ++j) {
+            //     if (new_curr_sstable[j].key == key) {
+            //         // check if deleted here, otherwise, return it's value 
+            //         if (new_curr_sstable[j].deleted) {
+            //             // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was DELETED so NOT FOUND!" << endl;
+            //             if (!called_from_range) {
+            //                 cout << endl; // print empty line for deleted key
+            //             }
+            //             result_found = true;
+            //             result = -1;
+            //         } else {
+            //             // cout << "(" << key << ", " << curr_level_ptr->sstable_[midpoint].value << ") was found at level " << i << endl;
+            //             if (!called_from_range) {
+            //                 cout << new_curr_sstable[j].value << endl;
+            //             } else {
+            //                 cout << key << ":" << new_curr_sstable[j].value << " ";
+            //             }
+            //             result_found = true;
+            //             result = new_curr_sstable[j].value;
+            //         }
+            //     }
+
+            //     if (result_found) {
+            //         break;
+            //     }
+            // }
+
+            // close(curr_fd);
+
+
+            // if (result_found) {
+            //     return result;
+            // }
 
         }
 
@@ -652,7 +794,7 @@ public:
         if (!called_from_range) {
             cout << endl; // print empty line to signify no key was found
         }
-        return -1;
+        return result;
     }
 
     // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
