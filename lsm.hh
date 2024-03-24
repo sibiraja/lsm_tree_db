@@ -562,7 +562,7 @@ public:
         buffer_ptr_->flush();
     }
 
-    // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
+    
     int get(int key, bool called_from_range = false) {
         // do linear search on the buffer (since buffer isn't sorted)
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
@@ -655,7 +655,7 @@ public:
         return -1;
     }
 
-
+    // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
     void range(int start, int end) {
         for (int i = start; i < end; ++i) {
             get(i, true);
