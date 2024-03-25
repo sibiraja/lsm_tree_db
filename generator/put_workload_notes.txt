@@ -3,10 +3,10 @@
 +----------------------------+
 | initial-seed: 13141
 | puts-total: 100000
-| gets-total: 1000
+| gets-total: 0
 | get-skewness: 0.2000
 | ranges: 0
 | range distribution: uniform
-| deletes: 20
+| deletes: 0
 | gets-misses-ratio: 0.3000
 +----------------------------+
