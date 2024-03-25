@@ -24,6 +24,6 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS)
 
 clean:
-	rm -f $(TARGET) $(OBJECTS) *.data *.log
+	rm -f $(TARGET) $(OBJECTS) *.data
 
 .PHONY: all clean
