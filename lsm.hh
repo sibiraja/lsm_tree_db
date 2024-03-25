@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <set>
+#include <cassert>
 #include "bloom_filter.hh"
 
 #define INITIAL_LEVEL_CAPACITY      341
