@@ -1,0 +1,12 @@
++---------- CS 265 ----------+
+|        WORKLOAD INFO       |
++----------------------------+
+| initial-seed: 13141
+| puts-total: 100000
+| gets-total: 1000
+| get-skewness: 0.2000
+| ranges: 0
+| range distribution: uniform
+| deletes: 20
+| gets-misses-ratio: 0.3000
++----------------------------+
