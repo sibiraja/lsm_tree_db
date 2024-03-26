@@ -122,7 +122,7 @@ public:
                 printf("Mmap failed.\n");
                 exit(0);
             }
-            memset(curr_level_data, 0, max_file_size);
+            // memset(curr_level_data, 0, max_file_size);
             rflag = msync(curr_level_data, max_file_size, MS_SYNC);
 
             if(rflag == -1)
@@ -295,7 +295,7 @@ public:
                 exit(0);
             }
 
-            memset(curr_file_ptr, 0, max_file_size);
+            // memset(curr_file_ptr, 0, max_file_size);
             int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
             if(rflag == -1) {
                 printf("Unable to msync.\n");
@@ -696,6 +696,7 @@ public:
     buffer* buffer_ptr_;
     
     lsm_tree() {
+        cout << "SIZE RATIO: " << SIZE_RATIO << endl;
         // NEW DISK STORAGE IMPLEMENTATION CODE
         // if `level_metadata.data` file doesn't exist, create it and memset() it to all 0's to represent curr_size is 0 for all levels when we have no data yet
         struct stat metadata_file_exists;
