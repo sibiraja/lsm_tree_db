@@ -12,6 +12,7 @@
 #define INITIAL_LEVEL_CAPACITY      682
 #define SIZE_RATIO                  2
 #define BUFFER_CAPACITY             5
+// #define BUFFER_CAPACITY             341
 #define MAX_LEVELS                  10
 #define FENCE_PTR_EVERY_K_ENTRIES   341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               12
@@ -20,6 +21,7 @@
 const char* metadata_filename = "level_metadata.data";
 const size_t metadata_size = MAX_LEVELS * sizeof(int); // fixed size for metadata since each level will have an int representing it's `curr_size`
 int* metadata_file_ptr;
+int metadata_file_descriptor;
 
 // global array that will contain pointers to each level object that we create so we can access attributes easily 
 class level; // forward declaration so compiler knows what level type is before we hit the next line of code
@@ -123,6 +125,12 @@ public:
             {
                 printf("Unable to msync.\n");
                 exit(0);
+            }
+            // fsync the file descriptor to ensure data is written to disk
+            if (fsync(fd) == -1) {
+                perror("fsync error");
+                exit(0);
+                // Handle error
             }
             rflag = munmap(curr_level_data, max_file_size);
             if(rflag == -1)
@@ -285,6 +293,17 @@ public:
 
             memset(curr_file_ptr, 0, max_file_size);
             int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
+            if(rflag == -1) {
+                printf("Unable to msync.\n");
+                exit(0);
+            }
+
+            // fsync the file descriptor to ensure data is written to disk
+            if (fsync(curr_fd) == -1) {
+                perror("fsync error");
+                exit(0);
+                // Handle error
+            }
             rflag = munmap(curr_file_ptr, max_file_size);
             if(rflag == -1)
             {
@@ -438,10 +457,12 @@ public:
             if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
                 filter_->insert(new_curr_sstable[my_ptr].key);
+                // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
                 ++my_ptr;
             } else if (new_curr_sstable[my_ptr].key > new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
                 filter_->insert(new_child_data[child_ptr].key);
+                // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
@@ -449,6 +470,8 @@ public:
                 filter_->insert(new_child_data[child_ptr].key);
                 ++child_ptr;
                 ++my_ptr;
+
+                cout << "WE SHOULD NOT HAVE 2 KEYS THAT ARE EQUAL IN COMMANDS WORKLOAD" << endl;
             }
 
             ++temp_sstable_ptr;
@@ -475,6 +498,7 @@ public:
             new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
             // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
             filter_->insert(new_curr_sstable[my_ptr].key);
+            // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++my_ptr;
             ++temp_sstable_ptr;
         }
@@ -493,6 +517,7 @@ public:
 
             new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
             filter_->insert(new_child_data[child_ptr].key);
+            // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++child_ptr;
             ++temp_sstable_ptr;
         }
@@ -510,6 +535,11 @@ public:
             printf("Unable to msync to metadata file.\n");
             exit(0);
         }
+        // fsync the file descriptor to ensure data is written to disk
+        if (fsync(metadata_file_descriptor) == -1) {
+            perror("fsync error");
+            // Handle error
+        }
 
 
         // MSYNC temp data file and munmap temp file
@@ -521,6 +551,11 @@ public:
             if(rflag == -1)
             {
                 printf("Unable to msync.\n");
+            }
+            // fsync the file descriptor to ensure data is written to disk
+            if (fsync(temp_fd) == -1) {
+                perror("fsync error");
+                // Handle error
             }
             rflag = munmap(new_temp_sstable, max_file_size);
             if(rflag == -1)
@@ -566,6 +601,11 @@ public:
         } else {
             cout << "Error in renaming temp file" << endl;
             exit(0);
+        }
+
+        struct stat file_exists;
+        while (stat (disk_file_name_.c_str(), &file_exists) != 0) {
+            // busy wait to ensure that renaming of temp file to disk file is done
         }
 
 
@@ -698,6 +738,13 @@ public:
                 cout << "unable to msync metadata file" << endl;
                 exit(0);
             }
+            // fsync the file descriptor to ensure data is written to disk
+            if (fsync(metadata_file_descriptor) == -1) {
+                perror("fsync error");
+                // Handle error
+            }
+
+            metadata_file_descriptor = fd;
         }
         // if file already exists, just mmap it
         else {
@@ -714,6 +761,8 @@ public:
                 close(fd);
                 exit(0);
             }
+
+            metadata_file_descriptor = fd;
         }
 
         // END NEW DISK STORAGE IMPLEMENTATION CODE
@@ -905,7 +954,7 @@ public:
         set<int> deleted_keys;
         set<int> valid_keys;
 
-        int naive_sum = 0;
+        unsigned long naive_sum = 0;
 
         naive_sum += buffer_ptr_->curr_size_;
 
@@ -925,6 +974,10 @@ public:
             }
             // cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
         }
+        if (naive_sum != valid_keys.size()) {
+            cout << "MISMATCH BETWEEN BUFFER SIZE AND VALID KEYS SET" << endl;
+        }
+        
         terminal_output[1] += "LVL0: " + to_string(buffer_ptr_->curr_size_) + ", ";
         terminal_output.push_back(buffer_contents);
 
@@ -960,7 +1013,20 @@ public:
                 // else if it is deleted, only add it to the deleted set if not already in valid set (due to an earlier level)
                 else if (new_curr_sstable[j].deleted && valid_keys.find(new_curr_sstable[j].key) == valid_keys.end()) {
                     deleted_keys.insert(new_curr_sstable[j].key);
+                } else {
+                    cout << "WE SHOULD NOT GET TO THIS ELSE CASE" << endl;
+                    assert(false);
                 }
+
+                if (new_curr_sstable[j].deleted) {
+                    cout << "Key " << new_curr_sstable[j].key << " is DELETED, SO NOT COUNTING IN PRINTSTATS" << endl;
+                }
+
+                // This doesn't trigger mismatch even though there was a run with only 993 keys
+                // naive_sum += 1;
+                // if (naive_sum != valid_keys.size()) {
+                //     cout << "MISMATCH BETWEEN LEVEL " << i << "'s SIZE AND VALID KEYS SET" << endl;
+                // }
             }
             terminal_output[1] += "LVL" + to_string(i) + ": " + to_string(levels_[i]->curr_size_) + ", ";
             terminal_output.push_back(curr_level_contents);
@@ -973,6 +1039,10 @@ public:
                 exit(0);
             }
             close(curr_fd);
+
+            if (naive_sum != valid_keys.size()) {
+                cout << "MISMATCH BETWEEN LEVEL " << i << "'s SIZE AND VALID KEYS SET" << endl;
+            }
         }
 
         cout << "NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: " << naive_sum << endl;
@@ -986,6 +1056,16 @@ public:
                 if (i >= 1) {
                     cout << endl;
                 }
+            }
+        }
+
+        for (int i = 1; i <= 1000; ++i) {
+            if (valid_keys.find(i) == valid_keys.end()) {
+                cout << "Key " << i << " IS NOT IN VALID" << endl;
+            }
+
+            if (deleted_keys.find(i) != deleted_keys.end()) {
+                cout << "Key " << i << " IS IN DELETED" << endl;
             }
         }
     }
