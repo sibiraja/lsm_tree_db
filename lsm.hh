@@ -10,7 +10,7 @@
 #include "bloom_filter.hh"
 
 #define INITIAL_LEVEL_CAPACITY      682
-#define SIZE_RATIO                  2
+#define SIZE_RATIO                  5
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             341
 #define MAX_LEVELS                  10

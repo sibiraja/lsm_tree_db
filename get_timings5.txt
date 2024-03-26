@@ -1,0 +1,130 @@
+=== Run 1 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 5
+Lseek failed! Exiting program
+
+ Performance counter stats for './database':
+
+              3.69 msec task-clock                       #    0.837 CPUs utilized             
+                 0      context-switches                 #    0.000 /sec                      
+                 0      cpu-migrations                   #    0.000 /sec                      
+               128      page-faults                      #   34.655 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       0.004411639 seconds time elapsed
+
+       0.004639000 seconds user
+       0.000000000 seconds sys
+
+
+
+=== Run 2 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 5
+Lseek failed! Exiting program
+
+ Performance counter stats for './database':
+
+              8.94 msec task-clock                       #    0.577 CPUs utilized             
+                 7      context-switches                 #  782.632 /sec                      
+                 0      cpu-migrations                   #    0.000 /sec                      
+               128      page-faults                      #   14.311 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       0.015494430 seconds time elapsed
+
+       0.009552000 seconds user
+       0.000000000 seconds sys
+
+
+
+=== Run 3 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 5
+Lseek failed! Exiting program
+
+ Performance counter stats for './database':
+
+              4.47 msec task-clock                       #    0.298 CPUs utilized             
+                 3      context-switches                 #  670.492 /sec                      
+                 0      cpu-migrations                   #    0.000 /sec                      
+               129      page-faults                      #   28.831 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       0.015018445 seconds time elapsed
+
+       0.005218000 seconds user
+       0.000000000 seconds sys
+
+
+
+=== Run 4 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 5
+Lseek failed! Exiting program
+
+ Performance counter stats for './database':
+
+              3.89 msec task-clock                       #    0.361 CPUs utilized             
+                 7      context-switches                 #    1.799 K/sec                     
+                 0      cpu-migrations                   #    0.000 /sec                      
+               130      page-faults                      #   33.418 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       0.010783531 seconds time elapsed
+
+       0.004629000 seconds user
+       0.000000000 seconds sys
+
+
+
+=== Run 5 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 5
+Lseek failed! Exiting program
+
+ Performance counter stats for './database':
+
+              4.16 msec task-clock                       #    0.868 CPUs utilized             
+                 0      context-switches                 #    0.000 /sec                      
+                 0      cpu-migrations                   #    0.000 /sec                      
+               129      page-faults                      #   31.016 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       0.004793994 seconds time elapsed
+
+       0.004841000 seconds user
+       0.000000000 seconds sys
+
+
+
