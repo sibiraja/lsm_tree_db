@@ -213,7 +213,7 @@ public:
             close(child_fd);
             exit(0);
         }
-        // cout << "mmap()'ed the current level's file!" << endl;
+        cout << "mmap()'ed the current level's file!" << endl;
 
 
         // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
@@ -249,7 +249,7 @@ public:
             close(temp_fd);
             exit(0);
         }
-        // cout << "mmap()'ed the temp data file!" << endl;
+        cout << "mmap()'ed the temp data file!" << endl;
 
 
         // merge 2 sorted arrays into 1 sorted array
@@ -257,6 +257,8 @@ public:
         int child_ptr = 0;
 
         int temp_sstable_ptr = 0;
+
+        cout << "About to merge 2 sorted arrays" << endl;
 
         while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
@@ -298,6 +300,8 @@ public:
 
             ++temp_sstable_ptr;
         }
+        
+        cout << "Finished first merging loop" << endl;
 
         while (my_ptr < curr_size_ ) {
             // skip over deleted elements here
@@ -313,6 +317,8 @@ public:
             ++my_ptr;
             ++temp_sstable_ptr;
         }
+        
+        cout << "Finished second merging loop" << endl;
 
         while (child_ptr < num_elements_to_merge ) {
             // skip over deleted elements here
@@ -328,6 +334,8 @@ public:
             ++child_ptr;
             ++temp_sstable_ptr;
         }
+
+        cout << "Finished third merging loop" << endl;
 
 
         curr_size_ = temp_sstable_ptr;
@@ -358,6 +366,8 @@ public:
                 printf("Unable to munmap.\n");
             }
             close(temp_fd);
+
+            cout << "Finished msyncing" << endl;
         }
 
         
@@ -368,7 +378,7 @@ public:
             {
                 printf("Unable to munmap child's file.\n");
             }
-            // cout << "child is a level, just munmap()'ed!" << endl;
+            cout << "child is a level, just munmap()'ed!" << endl;
             close(child_fd);
         }
 
@@ -378,7 +388,7 @@ public:
         {
             printf("Unable to munmap current level's file.\n");
         }
-        // cout << "munmap()'ed the current level's file!" << endl;
+        cout << "munmap()'ed the current level's file!" << endl;
         close(curr_fd);
 
         
@@ -397,6 +407,8 @@ public:
             cout << "Error in renaming temp file" << endl;
             exit(0);
         }
+
+        cout << "Finished merge() function, going to return!" << endl;
 
         return true;
     }
