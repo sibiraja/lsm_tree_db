@@ -2,28 +2,34 @@
 CC=g++
 
 # Compiler flags
-CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers
+CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb
 
-# Target executable name
-TARGET=database
+# Target executable names
+TARGET1=database
+TARGET2=put_test
 
-# Source files
-SOURCES=database.cpp
+# Source files for each executable
+SOURCES1=database.cpp
+SOURCES2=put_test.cpp
 
-# Object files
-OBJECTS=$(SOURCES:.cpp=.o)
+# Object files for each executable
+OBJECTS1=$(SOURCES1:.cpp=.o)
+OBJECTS2=$(SOURCES2:.cpp=.o)
 
 # Default target
-all: $(TARGET)
+all: $(TARGET1) $(TARGET2)
 
 # Explicit rule for object files to ensure CFLAGS are applied
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS)
+$(TARGET1): $(OBJECTS1)
+	$(CC) $(CFLAGS) -o $(TARGET1) $(OBJECTS1)
+
+$(TARGET2): $(OBJECTS2)
+	$(CC) $(CFLAGS) -o $(TARGET2) $(OBJECTS2)
 
 clean:
-	rm -f $(TARGET) $(OBJECTS) *.data
+	rm -f $(TARGET1) $(TARGET2) $(OBJECTS1) $(OBJECTS2) *.data
 
 .PHONY: all clean

@@ -65,7 +65,8 @@ public:
 
         // NEW DISK STORAGE IMPLEMENTATION CODE
         disk_file_name_ = "LEVEL" + to_string(curr_level_) + ".data";
-        max_file_size = 4096 * curr_level_;
+        // max_file_size = 4096 * curr_level_;
+        max_file_size = ((this->capacity_ * 12 + 4095) / 4096) * 4096;
 
         // in case we already have data for this level, udpate the curr_size count using the level metadata file and re-construct bloom filters and fence pointers
         struct stat file_exists;
@@ -465,7 +466,14 @@ public:
 
             // assert(sstable_[my_ptr].deleted == false);
 
-            new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
+            auto curr_key = new_curr_sstable[my_ptr].key;
+            auto curr_value = new_curr_sstable[my_ptr].value;
+            auto curr_deleted = new_curr_sstable[my_ptr].deleted;
+
+            lsm_data struct_to_merge = {curr_key, curr_value, curr_deleted};
+
+            new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
+            // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
             filter_->insert(new_curr_sstable[my_ptr].key);
             ++my_ptr;
             ++temp_sstable_ptr;
