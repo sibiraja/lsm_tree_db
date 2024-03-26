@@ -919,7 +919,7 @@ public:
         // print contents of each level's disk file by mmap and munmap
         for (int i = 1; i <= MAX_LEVELS; ++i) {
             // cout << "===Level " << i << " contents===" << endl;
-            auto curr_level_ptr = levels_[i];
+            // auto curr_level_ptr = levels_[i];
 
             int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
             if (curr_fd == -1) {
@@ -964,7 +964,7 @@ public:
 
         terminal_output[0] = "Logical Pairs: " + to_string(valid_keys.size());
 
-        for (int i = 0; i < terminal_output.size(); ++i) {
+        for (unsigned long i = 0; i < terminal_output.size(); ++i) {
             if (terminal_output[i].length() > 0) {
                 cout << terminal_output[i] << endl;
                 // empty line to match formatting as per project requirements document

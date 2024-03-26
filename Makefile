@@ -2,7 +2,7 @@
 CC=g++
 
 # Compiler flags
-CFLAGS=-std=c++11 -g
+CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers
 
 # Target executable name
 TARGET=database

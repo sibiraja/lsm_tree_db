@@ -59,7 +59,6 @@ int main() {
                 // del(key);
                 break;
             case 'r': {
-                int startKey, endKey;
                 iss >> startKey >> endKey;
                 db->range(startKey, endKey);
                 // range(startKey, endKey);

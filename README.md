@@ -2,6 +2,7 @@
 Log-structured merge-tree
 
 ##
+- I MIGHT HAVE UNDEFINED BEHAVIOR, AND DOCKER CONTAINERS COULD MASK THAT. RUN CODEBASE LOCALLY ON MACOS AND TRY TO DEBUG WITH GDB. DON'T USE DOCKER.
 - Docker for debugging with GDB: `docker build -t lsm_tree`, and `docker run -it --rm -v /Users/sibiraja/Desktop/lsm_tree_db:/usr/src/lsm_tree lsm_tree`
 
 ## Running database
