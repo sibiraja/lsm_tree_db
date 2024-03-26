@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Files to store perf outputs
-put_output_file="put_timings5.txt"
-get_output_file="get_timings5.txt"
+put_output_file="put_timings1705.txt"
+get_output_file="get_timings1705.txt"
 
 # Ensure the output files are empty
 > "$put_output_file"

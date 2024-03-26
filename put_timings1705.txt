@@ -1,0 +1,125 @@
+=== Run 1 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 2
+
+ Performance counter stats for './database':
+
+          1,238.82 msec task-clock                       #    0.254 CPUs utilized             
+             3,407      context-switches                 #    2.750 K/sec                     
+                10      cpu-migrations                   #    8.072 /sec                      
+             3,371      page-faults                      #    2.721 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       4.881773992 seconds time elapsed
+
+       0.409439000 seconds user
+       0.840429000 seconds sys
+
+
+
+=== Run 2 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 2
+
+ Performance counter stats for './database':
+
+          1,488.38 msec task-clock                       #    0.248 CPUs utilized             
+             3,536      context-switches                 #    2.376 K/sec                     
+                18      cpu-migrations                   #   12.094 /sec                      
+             3,374      page-faults                      #    2.267 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       6.005397019 seconds time elapsed
+
+       0.650950000 seconds user
+       0.853187000 seconds sys
+
+
+
+=== Run 3 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 2
+
+ Performance counter stats for './database':
+
+          1,277.93 msec task-clock                       #    0.226 CPUs utilized             
+             3,404      context-switches                 #    2.664 K/sec                     
+                15      cpu-migrations                   #   11.738 /sec                      
+             3,374      page-faults                      #    2.640 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       5.656729152 seconds time elapsed
+
+       0.514648000 seconds user
+       0.764824000 seconds sys
+
+
+
+=== Run 4 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 2
+
+ Performance counter stats for './database':
+
+          1,344.92 msec task-clock                       #    0.247 CPUs utilized             
+             3,538      context-switches                 #    2.631 K/sec                     
+                23      cpu-migrations                   #   17.101 /sec                      
+             3,374      page-faults                      #    2.509 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       5.442209023 seconds time elapsed
+
+       0.512427000 seconds user
+       0.849365000 seconds sys
+
+
+
+=== Run 5 ===
+
+
+=====NEW RUN=====
+
+SIZE RATIO: 2
+
+ Performance counter stats for './database':
+
+          1,209.34 msec task-clock                       #    0.245 CPUs utilized             
+             3,447      context-switches                 #    2.850 K/sec                     
+                11      cpu-migrations                   #    9.096 /sec                      
+             3,383      page-faults                      #    2.797 K/sec                     
+   <not supported>      cycles                                                                
+   <not supported>      instructions                                                          
+   <not supported>      branches                                                              
+   <not supported>      branch-misses                                                         
+
+       4.938947936 seconds time elapsed
+
+       0.579313000 seconds user
+       0.645310000 seconds sys
+
+
+
