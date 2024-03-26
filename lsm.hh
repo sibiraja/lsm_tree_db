@@ -6,8 +6,9 @@
 #include <unistd.h>
 #include <cstring>
 #include <set>
+#include <cassert>
 
-#define INITIAL_LEVEL_CAPACITY      10
+#define INITIAL_LEVEL_CAPACITY      341
 #define SIZE_RATIO                  2
 #define BUFFER_CAPACITY             5
 #define MAX_LEVELS                  10
@@ -213,7 +214,7 @@ public:
             close(child_fd);
             exit(0);
         }
-        cout << "mmap()'ed the current level's file!" << endl;
+        // cout << "mmap()'ed the current level's file!" << endl;
 
 
         // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
@@ -249,7 +250,7 @@ public:
             close(temp_fd);
             exit(0);
         }
-        cout << "mmap()'ed the temp data file!" << endl;
+        // cout << "mmap()'ed the temp data file!" << endl;
 
 
         // merge 2 sorted arrays into 1 sorted array
@@ -258,7 +259,7 @@ public:
 
         int temp_sstable_ptr = 0;
 
-        cout << "About to merge 2 sorted arrays" << endl;
+        // cout << "About to merge 2 sorted arrays" << endl;
 
         while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
@@ -301,7 +302,7 @@ public:
             ++temp_sstable_ptr;
         }
         
-        cout << "Finished first merging loop" << endl;
+        // cout << "Finished first merging loop" << endl;
 
         while (my_ptr < curr_size_ ) {
             // skip over deleted elements here
@@ -318,7 +319,7 @@ public:
             ++temp_sstable_ptr;
         }
         
-        cout << "Finished second merging loop" << endl;
+        // cout << "Finished second merging loop" << endl;
 
         while (child_ptr < num_elements_to_merge ) {
             // skip over deleted elements here
@@ -335,7 +336,7 @@ public:
             ++temp_sstable_ptr;
         }
 
-        cout << "Finished third merging loop" << endl;
+        // cout << "Finished third merging loop" << endl;
 
 
         curr_size_ = temp_sstable_ptr;
@@ -367,7 +368,7 @@ public:
             }
             close(temp_fd);
 
-            cout << "Finished msyncing" << endl;
+            // cout << "Finished msyncing" << endl;
         }
 
         
@@ -378,7 +379,7 @@ public:
             {
                 printf("Unable to munmap child's file.\n");
             }
-            cout << "child is a level, just munmap()'ed!" << endl;
+            // cout << "child is a level, just munmap()'ed!" << endl;
             close(child_fd);
         }
 
@@ -388,7 +389,7 @@ public:
         {
             printf("Unable to munmap current level's file.\n");
         }
-        cout << "munmap()'ed the current level's file!" << endl;
+        // cout << "munmap()'ed the current level's file!" << endl;
         close(curr_fd);
 
         
@@ -408,7 +409,7 @@ public:
             exit(0);
         }
 
-        cout << "Finished merge() function, going to return!" << endl;
+        // cout << "Finished merge() function, going to return!" << endl;
 
         return true;
     }
@@ -705,9 +706,12 @@ public:
         set<int> deleted_keys;
         set<int> valid_keys;
 
+        int naive_sum = 0;
+
         // print contents of buffer
         string buffer_contents = "";
         // cout << "===Buffer contents======" << endl;
+        naive_sum += buffer_ptr_->curr_size_;
         for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
             auto curr_data = buffer_ptr_->buffer_[i];
             string temp = to_string(curr_data.key) + ":" + to_string(curr_data.value) + ":L0 ";
@@ -728,6 +732,7 @@ public:
         for (int i = 1; i <= MAX_LEVELS; ++i) {
             // cout << "===Level " << i << " contents===" << endl;
             auto curr_level_ptr = levels_[i];
+            naive_sum += curr_level_ptr->curr_size_;
 
             int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
             if (curr_fd == -1) {
@@ -771,6 +776,8 @@ public:
         }
 
         terminal_output[0] = "Logical Pairs: " + to_string(valid_keys.size());
+
+        cout << "NAIVE SUM FOR TOTAL ENTRIES IN DATABASE: " << naive_sum << endl;
 
         for (int i = 0; i < terminal_output.size(); ++i) {
             if (terminal_output[i].length() > 0) {

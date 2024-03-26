@@ -2,7 +2,7 @@
 CC=g++
 
 # Compiler flags
-CFLAGS=-std=c++11
+CFLAGS=-std=c++11 -g
 
 # Target executable name
 TARGET=database

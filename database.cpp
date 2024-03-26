@@ -28,6 +28,10 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
 }
 
 int main() {
+    cout << endl;
+    cout << endl;
+    cout << "=====NEW RUN=====" << endl;
+    cout << endl;
     lsm_tree* db = new lsm_tree();
     
     string line;
@@ -41,6 +45,7 @@ int main() {
             case 'p':
                 iss >> key >> value;
                 db->insert({key, value});
+                cout << "Inserted (" << key << ", " << value << ")" << endl; 
                 // put(key, value);
                 break;
             case 'g':
