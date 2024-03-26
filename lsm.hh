@@ -905,6 +905,10 @@ public:
         set<int> deleted_keys;
         set<int> valid_keys;
 
+        int naive_sum = 0;
+
+        naive_sum += buffer_ptr_->curr_size_;
+
         // print contents of buffer
         string buffer_contents = "";
         // cout << "===Buffer contents======" << endl;
@@ -926,6 +930,7 @@ public:
 
         // print contents of each level's disk file by mmap and munmap
         for (int i = 1; i <= MAX_LEVELS; ++i) {
+            naive_sum += levels_[i]->curr_size_;
             // cout << "===Level " << i << " contents===" << endl;
             // auto curr_level_ptr = levels_[i];
 
@@ -969,6 +974,8 @@ public:
             }
             close(curr_fd);
         }
+
+        cout << "NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: " << naive_sum << endl;
 
         terminal_output[0] = "Logical Pairs: " + to_string(valid_keys.size());
 
