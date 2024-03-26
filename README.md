@@ -1,6 +1,8 @@
 # lsm_tree_db
 Log-structured merge-tree
 
+##
+- Docker for debugging with GDB: `docker build -t lsm_tree`, and `docker run -it --rm -v /Users/sibiraja/Desktop/lsm_tree_db:/usr/src/lsm_tree lsm_tree`
 
 ## Running database
 - Running `make` compiles necessary files, running `make clean` removes all the disk files and log file 

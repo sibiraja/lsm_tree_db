@@ -382,7 +382,7 @@ public:
             close(temp_fd);
             exit(0);
         }
-        cout << "mmap()'ed the temp data file!" << endl;
+        // cout << "mmap()'ed the temp data file!" << endl;
 
 
         // Bloom filter set up
@@ -399,7 +399,7 @@ public:
         delete filter_; // delete previous bloom filter we may have had
         filter_ = new bloom_filter(parameters);
 
-        cout << "Initialized bf and fp's" << endl;
+        // cout << "Initialized bf and fp's" << endl;
 
         // merge 2 sorted arrays into 1 sorted array
         int my_ptr = 0;
@@ -407,7 +407,7 @@ public:
 
         int temp_sstable_ptr = 0;
 
-        cout << "About to merge 2 sorted arrays" << endl;
+        // cout << "About to merge 2 sorted arrays" << endl;
 
         while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
@@ -453,7 +453,7 @@ public:
             ++temp_sstable_ptr;
         }
 
-        cout << "Finished first merging loop" << endl;
+        // cout << "Finished first merging loop" << endl;
 
         while (my_ptr < curr_size_ ) {
             // skip over deleted elements here
@@ -471,7 +471,7 @@ public:
             ++temp_sstable_ptr;
         }
 
-        cout << "Finished second merging loop" << endl;
+        // cout << "Finished second merging loop" << endl;
 
         while (child_ptr < num_elements_to_merge ) {
             // skip over deleted elements here
@@ -489,7 +489,7 @@ public:
             ++temp_sstable_ptr;
         }
 
-        cout << "Finished third merging loop" << endl;
+        // cout << "Finished third merging loop" << endl;
 
 
         curr_size_ = temp_sstable_ptr;
