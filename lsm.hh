@@ -11,8 +11,8 @@
 
 #define INITIAL_LEVEL_CAPACITY      682
 #define SIZE_RATIO                  2
-#define BUFFER_CAPACITY             5
-// #define BUFFER_CAPACITY             341
+// #define BUFFER_CAPACITY             5
+#define BUFFER_CAPACITY             341
 #define MAX_LEVELS                  10
 #define FENCE_PTR_EVERY_K_ENTRIES   341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               12
@@ -32,8 +32,12 @@ using namespace std;
 struct lsm_data {
     int key;
     int value;
-    bool deleted;
+    bool deleted = false;
+
+    lsm_data() : key(0), value(0), deleted(false) {} // Default constructor
+    lsm_data(int k, int v, bool d = false) : key(k), value(v), deleted(d) {}
 };
+
 
 struct fence_ptr {
     int min_key;
@@ -457,12 +461,12 @@ public:
             if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
                 filter_->insert(new_curr_sstable[my_ptr].key);
-                // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+                cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
                 ++my_ptr;
             } else if (new_curr_sstable[my_ptr].key > new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
                 filter_->insert(new_child_data[child_ptr].key);
-                // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+                cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
@@ -498,7 +502,7 @@ public:
             new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
             // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
             filter_->insert(new_curr_sstable[my_ptr].key);
-            // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+            cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++my_ptr;
             ++temp_sstable_ptr;
         }
@@ -517,7 +521,7 @@ public:
 
             new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
             filter_->insert(new_child_data[child_ptr].key);
-            // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+            cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++child_ptr;
             ++temp_sstable_ptr;
         }
