@@ -461,12 +461,12 @@ public:
             if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
                 filter_->insert(new_curr_sstable[my_ptr].key);
-                cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+                // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
                 ++my_ptr;
             } else if (new_curr_sstable[my_ptr].key > new_child_data[child_ptr].key) {
                 new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
                 filter_->insert(new_child_data[child_ptr].key);
-                cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+                // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
                 ++child_ptr;
             } else {
                 // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
@@ -502,7 +502,7 @@ public:
             new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
             // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
             filter_->insert(new_curr_sstable[my_ptr].key);
-            cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+            // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++my_ptr;
             ++temp_sstable_ptr;
         }
@@ -521,7 +521,7 @@ public:
 
             new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
             filter_->insert(new_child_data[child_ptr].key);
-            cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+            // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++child_ptr;
             ++temp_sstable_ptr;
         }
@@ -892,6 +892,8 @@ public:
                             }
                         }
 
+                        close(curr_fd);
+
                         // break out of inner most for loop that's iterating over each entry in the fence ptr's segment
                         if (result_found) {
                             break;
@@ -1022,9 +1024,9 @@ public:
                     assert(false);
                 }
 
-                if (new_curr_sstable[j].deleted) {
-                    cout << "Key " << new_curr_sstable[j].key << " is DELETED, SO NOT COUNTING IN PRINTSTATS" << endl;
-                }
+                // if (new_curr_sstable[j].deleted) {
+                //     cout << "Key " << new_curr_sstable[j].key << " is DELETED, SO NOT COUNTING IN PRINTSTATS" << endl;
+                // }
 
                 // This doesn't trigger mismatch even though there was a run with only 993 keys
                 // naive_sum += 1;
@@ -1044,9 +1046,9 @@ public:
             }
             close(curr_fd);
 
-            if (naive_sum != valid_keys.size()) {
-                cout << "MISMATCH BETWEEN LEVEL " << i << "'s SIZE AND VALID KEYS SET" << endl;
-            }
+            // if (naive_sum != valid_keys.size()) {
+            //     cout << "MISMATCH BETWEEN LEVEL " << i << "'s SIZE AND VALID KEYS SET" << endl;
+            // }
         }
 
         cout << "NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: " << naive_sum << endl;
@@ -1063,14 +1065,16 @@ public:
             }
         }
 
-        for (int i = 1; i <= 1000; ++i) {
-            if (valid_keys.find(i) == valid_keys.end()) {
-                cout << "Key " << i << " IS NOT IN VALID" << endl;
-            }
+        // for (int i = 1; i <= 1000; ++i) {
+        //     if (valid_keys.find(i) == valid_keys.end()) {
+        //         cout << "Key " << i << " IS NOT IN VALID" << endl;
+        //     }
 
-            if (deleted_keys.find(i) != deleted_keys.end()) {
-                cout << "Key " << i << " IS IN DELETED" << endl;
-            }
-        }
+        //     if (deleted_keys.find(i) != deleted_keys.end()) {
+        //         cout << "Key " << i << " IS IN DELETED" << endl;
+        //     }
+        // }
+
+
     }
 };
