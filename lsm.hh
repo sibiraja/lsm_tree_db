@@ -696,7 +696,7 @@ public:
     buffer* buffer_ptr_;
     
     lsm_tree() {
-        cout << "SIZE RATIO: " << SIZE_RATIO << endl;
+        // cout << "SIZE RATIO: " << SIZE_RATIO << endl;
         // NEW DISK STORAGE IMPLEMENTATION CODE
         // if `level_metadata.data` file doesn't exist, create it and memset() it to all 0's to represent curr_size is 0 for all levels when we have no data yet
         struct stat metadata_file_exists;
@@ -869,20 +869,54 @@ public:
                     // cout << "Read " << num_entries_in_segment << " in curr segment" << endl;
 
                     // Search through the buffer for the targetKey
-                    for (int i = 0; i < num_entries_in_segment; ++i) {
-                        // cout << "[get()] currently on (" << segment_buffer[i].key << ", " << segment_buffer[i].value << ")" << endl;
-                        if (segment_buffer[i].key == key) {
-                            if (segment_buffer[i].deleted) {
+                    // for (int i = 0; i < num_entries_in_segment; ++i) {
+                    //     // cout << "[get()] currently on (" << segment_buffer[i].key << ", " << segment_buffer[i].value << ")" << endl;
+                    //     if (segment_buffer[i].key == key) {
+                    //         if (segment_buffer[i].deleted) {
+                    //             if (!called_from_range) {
+                    //                 cout << endl; // print empty line for deleted key
+                    //             }
+                    //             result_found = true;
+                    //             result = -1;
+                    //         }
+                            
+                    //         // else, key exists and is not deleted, so we print the value
+                    //         else {
+                    //             result = segment_buffer[i].value;
+                    //             result_found = true;
+
+                    //             if (!called_from_range) {
+                    //                 cout << result << endl;
+                    //             } else {
+                    //                 cout << key << ":" << result << " ";
+                    //             }
+                    //         }
+                    //     }
+
+                    //     // break out of inner most for loop that's iterating over each entry in the fence ptr's segment
+                    //     if (result_found) {
+                    //         break;
+                    //     }
+                    // }
+
+                    // using binary search instead of naive linear search
+                    int left = 0;
+                    int right = num_entries_in_segment - 1;
+                    while (left <= right) {
+                        int midpoint = (left + right) / 2;
+                        if (segment_buffer[midpoint].key == key) {
+
+                            if (segment_buffer[midpoint].deleted) {
                                 if (!called_from_range) {
                                     cout << endl; // print empty line for deleted key
                                 }
                                 result_found = true;
                                 result = -1;
                             }
-                            
+
                             // else, key exists and is not deleted, so we print the value
                             else {
-                                result = segment_buffer[i].value;
+                                result = segment_buffer[midpoint].value;
                                 result_found = true;
 
                                 if (!called_from_range) {
@@ -891,15 +925,17 @@ public:
                                     cout << key << ":" << result << " ";
                                 }
                             }
-                        }
 
-                        close(curr_fd);
-
-                        // break out of inner most for loop that's iterating over each entry in the fence ptr's segment
-                        if (result_found) {
                             break;
+
+                        } else if (segment_buffer[midpoint].key < key) {
+                            left = midpoint + 1;
+                        } else {
+                            right = midpoint - 1;
                         }
                     }
+
+                    close(curr_fd); // make sure to close the fd that we opened
                 }
 
                 // break out of middle nested for loop that's iterating over each fence ptr
