@@ -961,10 +961,89 @@ public:
 
     // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
     void range(int start, int end) {
-        for (int i = start; i < end; ++i) {
-            get(i, true);
+        // for (int i = start; i < end; ++i) {
+        //     get(i, true);
+        // }
+        // cout << endl; // to end the line that the space delineated list of all the found pairs in the given range were printed on inside `get()`
+        
+        set<int> keys_found;
+
+
+        // do linear search on the buffer (since buffer isn't sorted)
+        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
+            auto curr_lsm_entry = buffer_ptr_->buffer_[i];
+            if (start <= curr_lsm_entry.key && curr_lsm_entry.key < end) {
+                if (!curr_lsm_entry.deleted) {
+                    cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
+                }
+
+                keys_found.insert(curr_lsm_entry.key);
+            }
         }
-        cout << endl; // to end the line that the space delineated list of all the found pairs in the given range were printed on inside `get()`
+
+        for (int i = 1; i < MAX_LEVELS; ++i) {
+            auto curr_level_ptr = levels_[i];
+            auto curr_bloom_filter = levels_[i]->filter_;
+            if (!curr_bloom_filter) {
+                assert(curr_level_ptr->curr_size_ == 0);
+            }
+
+            // loop through every fence ptr
+            for (int j = 0; j < curr_level_ptr->num_fence_ptrs_; ++j) {
+                // if current fence ptr has some overlap with the given range, iterate through fence ptr's segment 
+                if (curr_level_ptr->fp_array_[j].min_key < end && start <= curr_level_ptr->fp_array_[j].max_key) {
+
+                    int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+
+                    if (curr_fd == -1) {
+                        cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+                        exit(0);
+                    }
+
+                    lsm_data segment_buffer[341];
+
+                    // Determine the number of entries to read for this segment
+                    int entriesToRead = FENCE_PTR_EVERY_K_ENTRIES;
+                    // If this is the last segment, adjust the number of entries to read
+                    if (j == curr_level_ptr->num_fence_ptrs_ - 1) {
+                        int remainingEntries = curr_level_ptr->curr_size_ - (j * FENCE_PTR_EVERY_K_ENTRIES);
+                        entriesToRead = remainingEntries;
+                    }
+
+                    ssize_t bytesToRead = entriesToRead * sizeof(lsm_data);
+                    ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
+                    if (bytesRead < 0) {
+                        cout << "Error reading from file" << endl;
+                        return;
+                    }
+
+                    if (bytesRead % sizeof(lsm_data) != 0) {
+                        cout << "Did not read a full data entry in pread()!" << endl;
+                        return;
+                    }
+
+                    int num_entries_in_segment = bytesRead / sizeof(lsm_data);
+
+
+                    // iterate through each element in the segment buffer
+                    for (int k = 0; k < num_entries_in_segment; ++k) {
+                        if (start <= segment_buffer[k].key && segment_buffer[k].key < end && keys_found.find(segment_buffer[k].key) == keys_found.end()) {
+                            if (!segment_buffer[k].deleted) {
+                                cout << segment_buffer[k].key << ":" << segment_buffer[k].value << " ";
+                            }
+
+                            keys_found.insert(segment_buffer[k].key);
+                        }
+                    }
+
+                    close(curr_fd);
+
+                }
+            }
+        }
+
+        cout << endl;
+        return;
     }
 
 
@@ -1017,9 +1096,10 @@ public:
             }
             // cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
         }
-        if (naive_sum != valid_keys.size()) {
-            cout << "MISMATCH BETWEEN BUFFER SIZE AND VALID KEYS SET" << endl;
-        }
+        // if (naive_sum != valid_keys.size()) {
+        //     // note that this can occur if buffer contains deleted elements, so don't freak out immediately if this prints
+        //     cout << "MISMATCH BETWEEN BUFFER SIZE AND VALID KEYS SET" << endl;
+        // }
         
         terminal_output[1] += "LVL0: " + to_string(buffer_ptr_->curr_size_) + ", ";
         terminal_output.push_back(buffer_contents);
