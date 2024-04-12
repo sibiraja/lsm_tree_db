@@ -798,24 +798,18 @@ void lsm_tree::flush_buffer() {
 //      to ensure that the most recent data is searched through first. Once the key is found, we immediately return
 //      After initially searching through the buffer naively, we then query each level's bloom filters and fence ptrs
 //      to optimize our search by only doing 1 read on disk.
-void lsm_tree::get(int key, bool called_from_range) {
+void lsm_tree::get(int key) {
     // do linear search on the buffer (since buffer isn't sorted)
     for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
         if (buffer_ptr_->buffer_[i].key == key) {
             if (buffer_ptr_->buffer_[i].value == DELETED_FLAG) {
-                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
-                if (!called_from_range) {
-                    cout << endl; // print empty line for deleted key
-                }
+                cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
+                cout << endl;
                 return;
             }
 
             // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
-            if (!called_from_range) {
-                cout << buffer_ptr_->buffer_[i].value << endl;
-            } else {
-                cout << key << ":" << buffer_ptr_->buffer_[i].value << " ";
-            }
+            cout << buffer_ptr_->buffer_[i].value << endl;
             return;
         }
     }
@@ -877,9 +871,8 @@ void lsm_tree::get(int key, bool called_from_range) {
                     if (segment_buffer[midpoint].key == key) {
 
                         if (segment_buffer[midpoint].value == DELETED_FLAG) {
-                            if (!called_from_range) {
-                                cout << endl; // print empty line for deleted key
-                            }
+                            cout << "KEY WAS DELETED" << endl;
+                            cout << endl;
                             result_found = true;
                             result = -1;
                         }
@@ -889,11 +882,7 @@ void lsm_tree::get(int key, bool called_from_range) {
                             result = segment_buffer[midpoint].value;
                             result_found = true;
 
-                            if (!called_from_range) {
-                                cout << result << endl;
-                            } else {
-                                cout << key << ":" << result << " ";
-                            }
+                            cout << result << endl;
                         }
 
                         break;
@@ -922,10 +911,6 @@ void lsm_tree::get(int key, bool called_from_range) {
     }
 
     // cout << "Key: " << key << " WAS NOT FOUND!" << endl;
-    if (!called_from_range) {
-        cout << endl; // print empty line to signify no key was found
-    }
-    
     return;
 }
 

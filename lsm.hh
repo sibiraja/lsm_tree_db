@@ -18,7 +18,7 @@
 #define BUFFER_CAPACITY             50
 #define MAX_LEVELS                  10
 #define FENCE_PTR_EVERY_K_ENTRIES   341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
-#define LSM_DATA_SIZE               12
+#define LSM_DATA_SIZE               8
 #define DELETED_FLAG                INT_MIN
 
 
@@ -97,7 +97,7 @@ public:
 
     void flush_buffer();
 
-    void get(int key, bool called_from_range = false);
+    void get(int key);
 
     // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
     void range(int start, int end);
