@@ -19,6 +19,7 @@
 #define MAX_LEVELS                  10
 #define FENCE_PTR_EVERY_K_ENTRIES   341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               12
+#define DELETED_FLAG                INT_MIN
 
 
 using namespace std;
@@ -26,10 +27,6 @@ using namespace std;
 struct lsm_data {
     int key;
     int value;
-    bool deleted = false;
-
-    lsm_data() : key(0), value(0), deleted(false) {} // Default constructor
-    lsm_data(int k, int v, bool d = false) : key(k), value(v), deleted(d) {}
 };
 
 

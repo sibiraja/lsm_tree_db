@@ -404,7 +404,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
         
 
         // if both are the same key, and either one is deleted, skip over both
-        if (new_curr_sstable[my_ptr].key == new_child_data[child_ptr].key && (new_curr_sstable[my_ptr].deleted || new_child_data[child_ptr].deleted)) {
+        if (new_curr_sstable[my_ptr].key == new_child_data[child_ptr].key && (new_curr_sstable[my_ptr].value == DELETED_FLAG || new_child_data[child_ptr].value == DELETED_FLAG)) {
             ++my_ptr;
             ++child_ptr;
             continue; // so we don't execute the below conditions
@@ -412,12 +412,12 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
         // if currently at a deleted key at either list, skip over it
         // --> this case is when the lists have unique keys but they have been deleted themselves already, so we should not merge them
-        if (new_curr_sstable[my_ptr].deleted) {
+        if (new_curr_sstable[my_ptr].value == DELETED_FLAG) {
             ++my_ptr;
             continue;
         }
         
-        if (new_child_data[child_ptr].deleted) {
+        if (new_child_data[child_ptr].value == DELETED_FLAG) {
             ++child_ptr;
             continue;
         }
@@ -425,18 +425,18 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
         cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << " | new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
 
         if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
-            new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
+            new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value};
             filter_->insert(new_curr_sstable[my_ptr].key);
             // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++my_ptr;
         } else if (new_curr_sstable[my_ptr].key > new_child_data[child_ptr].key) {
-            new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
+            new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value};
             filter_->insert(new_child_data[child_ptr].key);
             // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
             ++child_ptr;
         } else {
             // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
-            new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
+            new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value};
             filter_->insert(new_child_data[child_ptr].key);
             ++child_ptr;
             ++my_ptr;
@@ -458,7 +458,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     while (my_ptr < curr_size_ ) {
         // skip over deleted elements here
         // assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
-        if (new_curr_sstable[my_ptr].deleted) {
+        if (new_curr_sstable[my_ptr].value == DELETED_FLAG) {
             ++my_ptr;
             continue;
         }
@@ -469,9 +469,8 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
         auto curr_key = new_curr_sstable[my_ptr].key;
         auto curr_value = new_curr_sstable[my_ptr].value;
-        auto curr_deleted = new_curr_sstable[my_ptr].deleted;
 
-        lsm_data struct_to_merge = {curr_key, curr_value, curr_deleted};
+        lsm_data struct_to_merge = {curr_key, curr_value};
 
         new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
         cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
@@ -491,7 +490,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     while (child_ptr < num_elements_to_merge ) {
         // skip over deleted elements here
         // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
-        if (new_child_data[child_ptr].deleted) {
+        if (new_child_data[child_ptr].value == DELETED_FLAG) {
             cout << "WE SHOULD NOT BE HERE" << endl;
             ++child_ptr;
             continue;
@@ -501,7 +500,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
         // assert(child_data[child_ptr].deleted == false);
 
-        new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value, new_child_data[my_ptr].deleted};
+        new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value};
         cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
         filter_->insert(new_child_data[child_ptr].key);
         // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
@@ -803,7 +802,7 @@ void lsm_tree::get(int key, bool called_from_range) {
     // do linear search on the buffer (since buffer isn't sorted)
     for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
         if (buffer_ptr_->buffer_[i].key == key) {
-            if (buffer_ptr_->buffer_[i].deleted) {
+            if (buffer_ptr_->buffer_[i].value == DELETED_FLAG) {
                 // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
                 if (!called_from_range) {
                     cout << endl; // print empty line for deleted key
@@ -877,7 +876,7 @@ void lsm_tree::get(int key, bool called_from_range) {
                     int midpoint = (left + right) / 2;
                     if (segment_buffer[midpoint].key == key) {
 
-                        if (segment_buffer[midpoint].deleted) {
+                        if (segment_buffer[midpoint].value == DELETED_FLAG) {
                             if (!called_from_range) {
                                 cout << endl; // print empty line for deleted key
                             }
@@ -949,7 +948,7 @@ void lsm_tree::range(int start, int end) {
     for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
         auto curr_lsm_entry = buffer_ptr_->buffer_[i];
         if (start <= curr_lsm_entry.key && curr_lsm_entry.key < end) {
-            if (!curr_lsm_entry.deleted) {
+            if (curr_lsm_entry.value != DELETED_FLAG) {
                 cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
             }
 
@@ -1004,7 +1003,7 @@ void lsm_tree::range(int start, int end) {
                 // iterate through each element in the segment buffer
                 for (int k = 0; k < num_entries_in_segment; ++k) {
                     if (start <= segment_buffer[k].key && segment_buffer[k].key < end && keys_found.find(segment_buffer[k].key) == keys_found.end()) {
-                        if (!segment_buffer[k].deleted) {
+                        if (segment_buffer[k].value != DELETED_FLAG) {
                             cout << segment_buffer[k].key << ":" << segment_buffer[k].value << " ";
                         }
 
@@ -1033,14 +1032,14 @@ void lsm_tree::delete_key(int key) {
     for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
         if (buffer_ptr_->buffer_[i].key == key) {
             // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
-            buffer_ptr_->buffer_[i].deleted = true;
+            buffer_ptr_->buffer_[i].value = DELETED_FLAG;
             return;
         }
     }
 
 
     // if not found in buffer, then just insert a new key value struct with the deleted flag set as true
-    insert({key, 0, true});
+    insert({key, DELETED_FLAG});
     return;
 }
 
@@ -1072,7 +1071,7 @@ void lsm_tree::printStats() {
         buffer_contents += temp;
 
         // note that buffer will never have duplicate keys, so no need to cross-reference across the deleted and valid sets here
-        if (curr_data.deleted) {
+        if (curr_data.value == DELETED_FLAG) {
             deleted_keys.insert(curr_data.key);
         } else {
             valid_keys.insert(curr_data.key);
@@ -1113,15 +1112,20 @@ void lsm_tree::printStats() {
             // cout << new_curr_sstable[j].key << ":" << new_curr_sstable[j].value << ":L" << i << endl;
 
             // if current key-value pair is not deleted and the key has not been previously deleted (due to an earlier level), add it to valid keys set
-            if (!new_curr_sstable[j].deleted && deleted_keys.find(new_curr_sstable[j].key) == deleted_keys.end()) {
+            if (new_curr_sstable[j].value != DELETED_FLAG && deleted_keys.find(new_curr_sstable[j].key) == deleted_keys.end()) {
                 valid_keys.insert(new_curr_sstable[j].key);
             }
             // else if it is deleted, only add it to the deleted set if not already in valid set (due to an earlier level)
-            else if (new_curr_sstable[j].deleted && valid_keys.find(new_curr_sstable[j].key) == valid_keys.end()) {
+            else if (new_curr_sstable[j].value == DELETED_FLAG && valid_keys.find(new_curr_sstable[j].key) == valid_keys.end()) {
                 deleted_keys.insert(new_curr_sstable[j].key);
             } else {
-                cout << "WE SHOULD NOT GET TO THIS ELSE CASE" << endl;
-                assert(false);
+                // cout << "WE SHOULD NOT GET TO THIS ELSE CASE, happening on (" << new_curr_sstable[j].key << ", " << new_curr_sstable[j].value << ")" << endl;
+                // assert(false);
+
+                // ACTUALLY, WE SHOULD GET IN THIS ELSE CASE IF WE INITIALLY HAVE AN OLD KEY, VALUE PAIR IN A LARGER LEVEL ON DISK, AND RECENTLY DELETED THAT KEY,
+                // BC WHEN WE ITERATE OVER EACH LEVEL'S CONTENTS AND GET TO THE OUTDATED KEY,VALUE PAIR, THAT KEY DOES NOT HAVE THE DELETED FLAG BUTTTTT IT 
+                // IS THE DELETED KEYS SET SINCE WHEN WE ITERATED OVER THE NEW ENTRY MARKING DELETION, WE ADDED THE KEY TO THE DELETED KEYS SET.
+                // thus, simply just don't do anything 
             }
 
             // if (new_curr_sstable[j].deleted) {
