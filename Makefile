@@ -10,7 +10,7 @@ TARGET1=database
 # TARGET3=get_test
 
 # Source files for each executable
-SOURCES1=database.cpp
+SOURCES1=database.cpp lsm.cpp
 # SOURCES2=put_test.cpp
 # SOURCES3=get_test.cpp
 

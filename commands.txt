@@ -1000,6 +1000,6 @@ p 999 -999
 p 1000 -1000
 f
 s
+d 425
+s
 e
-
-removed f to see if not flushing would produce correct results, it doesn't but seems to be slightly better?
