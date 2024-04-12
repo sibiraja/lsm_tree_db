@@ -232,18 +232,18 @@ void level::bf_fp_construct() {
 //      passed in when the buffer calls merge() and merges data with level1. Other levels never have to merge data
 //      directly from the buffer. Note that before the merge happens, we check if a cascade merge needs to happen first
 bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_ptr) {
-    cout << endl;
-    cout << endl;
-    cout << "====== INSIDE NEW MERGE! Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
+    // cout << endl;
+    // cout << endl;
+    // cout << "====== INSIDE NEW MERGE! Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
 
     // check for a potential cascade of merges
     if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
-        cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
+        // cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
         next_->merge(curr_size_, curr_level_);
 
         // reset data for this level as it has been merged with another level already
         curr_size_ = 0;
-        cout << "Bc we cascade merged, Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
+        // cout << "Bc we cascade merged, Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
 
         int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
         if (curr_fd == -1) {
@@ -395,7 +395,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
     int temp_sstable_ptr = 0;
 
-    cout << "About to merge 2 sorted arrays..." << endl;
+    // cout << "About to merge 2 sorted arrays..." << endl;
 
     while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
@@ -422,7 +422,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
             continue;
         }
 
-        cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << " | new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
+        // cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << " | new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
 
         if (new_curr_sstable[my_ptr].key < new_child_data[child_ptr].key) {
             new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value};
@@ -444,16 +444,16 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
             cout << "WE SHOULD NOT HAVE 2 KEYS THAT ARE EQUAL IN MY CUSTOM COMMANDS WORKLOAD" << endl;
         }
 
-        cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
 
         ++temp_sstable_ptr;
     }
 
     // cout << "Finished first merging loop" << endl;
 
-    if (my_ptr < curr_size_) {
-        cout << "Copying leftover elements from current level data over to new merged data..." << endl;
-    }
+    // if (my_ptr < curr_size_) {
+    //     cout << "Copying leftover elements from current level data over to new merged data..." << endl;
+    // }
 
     while (my_ptr < curr_size_ ) {
         // skip over deleted elements here
@@ -463,7 +463,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
             continue;
         }
 
-        cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << endl;
+        // cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << endl;
 
         // assert(sstable_[my_ptr].deleted == false);
 
@@ -473,7 +473,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
         lsm_data struct_to_merge = {curr_key, curr_value};
 
         new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
-        cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
         // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
         filter_->insert(new_curr_sstable[my_ptr].key);
         // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
@@ -483,9 +483,9 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
     // cout << "Finished second merging loop" << endl;
 
-    if (child_ptr < num_elements_to_merge) {
-        cout << "Copying leftover elements from child data over to new merged data..." << endl;
-    }
+    // if (child_ptr < num_elements_to_merge) {
+    //     cout << "Copying leftover elements from child data over to new merged data..." << endl;
+    // }
 
     while (child_ptr < num_elements_to_merge ) {
         // skip over deleted elements here
@@ -496,12 +496,12 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
             continue;
         }
 
-        cout << "new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
+        // cout << "new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
 
         // assert(child_data[child_ptr].deleted == false);
 
         new_temp_sstable[temp_sstable_ptr] = {new_child_data[child_ptr].key, new_child_data[child_ptr].value};
-        cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
         filter_->insert(new_child_data[child_ptr].key);
         // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
         ++child_ptr;
@@ -523,7 +523,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
 
     curr_size_ = temp_sstable_ptr;
-    cout << "Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
+    // cout << "Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
 
     // write curr_size to metadata file
     metadata_file_ptr[curr_level_] = curr_size_;
