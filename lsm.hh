@@ -12,10 +12,10 @@
 #include <cassert>
 #include "bloom_filter.hh"
 
-#define INITIAL_LEVEL_CAPACITY      1705
+#define INITIAL_LEVEL_CAPACITY      2
 #define SIZE_RATIO                  2
 // #define BUFFER_CAPACITY             5
-#define BUFFER_CAPACITY             341
+#define BUFFER_CAPACITY             1
 #define MAX_LEVELS                  10
 #define FENCE_PTR_EVERY_K_ENTRIES   341 // 341 = 4096 bytes / 12 bytes --> 12 bytes bc lsm_data is 4 + 4 + 1 + 3 bytes for alignment = 12 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               12

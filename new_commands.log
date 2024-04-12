@@ -1,0 +1,815 @@
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 1
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 3 | new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 3
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_curr_sstable[my_ptr].key: 2 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 2
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 5
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 5 | new_child_data[child_ptr].key: 6
+new_temp_sstable[temp_sstable_ptr].key: 5
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 6
+new_temp_sstable[temp_sstable_ptr].key: 6
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+Need to cascade merge level 2 with level 3
+
+
+====== INSIDE NEW MERGE! Need to merge level 2 with level 3
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 5
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 7
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 7 | new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 7
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 8
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 5 | new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 5
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 7
+new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 8
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 9
+new_temp_sstable[temp_sstable_ptr].key: 9
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 9 | new_child_data[child_ptr].key: 10
+new_temp_sstable[temp_sstable_ptr].key: 9
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 10
+new_temp_sstable[temp_sstable_ptr].key: 10
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+Need to cascade merge level 2 with level 3
+
+
+====== INSIDE NEW MERGE! Need to merge level 2 with level 3
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_curr_sstable[my_ptr].key: 2 | new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 2
+new_curr_sstable[my_ptr].key: 3 | new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 3
+new_curr_sstable[my_ptr].key: 4 | new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 4
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 5
+new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 7
+new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 8
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 9
+new_temp_sstable[temp_sstable_ptr].key: 9
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 11
+new_temp_sstable[temp_sstable_ptr].key: 11
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 11 | new_child_data[child_ptr].key: 12
+new_temp_sstable[temp_sstable_ptr].key: 11
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 12
+new_temp_sstable[temp_sstable_ptr].key: 12
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 9 | new_child_data[child_ptr].key: 11
+new_temp_sstable[temp_sstable_ptr].key: 9
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 11
+new_temp_sstable[temp_sstable_ptr].key: 11
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 13
+new_temp_sstable[temp_sstable_ptr].key: 13
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 13 | new_child_data[child_ptr].key: 14
+new_temp_sstable[temp_sstable_ptr].key: 13
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 14
+new_temp_sstable[temp_sstable_ptr].key: 14
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 9 | new_child_data[child_ptr].key: 13
+new_temp_sstable[temp_sstable_ptr].key: 9
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 13
+new_temp_sstable[temp_sstable_ptr].key: 13
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 15
+new_temp_sstable[temp_sstable_ptr].key: 15
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 15 | new_child_data[child_ptr].key: 16
+new_temp_sstable[temp_sstable_ptr].key: 15
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 16
+new_temp_sstable[temp_sstable_ptr].key: 16
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 9 | new_child_data[child_ptr].key: 15
+new_temp_sstable[temp_sstable_ptr].key: 9
+new_curr_sstable[my_ptr].key: 13 | new_child_data[child_ptr].key: 15
+new_temp_sstable[temp_sstable_ptr].key: 13
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 15
+new_temp_sstable[temp_sstable_ptr].key: 15
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 17
+new_temp_sstable[temp_sstable_ptr].key: 17
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 17 | new_child_data[child_ptr].key: 18
+new_temp_sstable[temp_sstable_ptr].key: 17
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 18
+new_temp_sstable[temp_sstable_ptr].key: 18
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+Need to cascade merge level 2 with level 3
+
+
+====== INSIDE NEW MERGE! Need to merge level 2 with level 3
+Need to cascade merge level 3 with level 4
+
+
+====== INSIDE NEW MERGE! Need to merge level 3 with level 4
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 5
+new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 7
+new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 8
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 9
+new_temp_sstable[temp_sstable_ptr].key: 9
+new_child_data[child_ptr].key: 13
+new_temp_sstable[temp_sstable_ptr].key: 13
+new_child_data[child_ptr].key: 15
+new_temp_sstable[temp_sstable_ptr].key: 15
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 17
+new_temp_sstable[temp_sstable_ptr].key: 17
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 19
+new_temp_sstable[temp_sstable_ptr].key: 19
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 19 | new_child_data[child_ptr].key: 20
+new_temp_sstable[temp_sstable_ptr].key: 19
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 20
+new_temp_sstable[temp_sstable_ptr].key: 20
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 17 | new_child_data[child_ptr].key: 19
+new_temp_sstable[temp_sstable_ptr].key: 17
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 19
+new_temp_sstable[temp_sstable_ptr].key: 19
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 21
+new_temp_sstable[temp_sstable_ptr].key: 21
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 21 | new_child_data[child_ptr].key: 22
+new_temp_sstable[temp_sstable_ptr].key: 21
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 22
+new_temp_sstable[temp_sstable_ptr].key: 22
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 17 | new_child_data[child_ptr].key: 21
+new_temp_sstable[temp_sstable_ptr].key: 17
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 21
+new_temp_sstable[temp_sstable_ptr].key: 21
+new_child_data[child_ptr].key: 22
+new_temp_sstable[temp_sstable_ptr].key: 22
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 23
+new_temp_sstable[temp_sstable_ptr].key: 23
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 23 | new_child_data[child_ptr].key: 24
+new_temp_sstable[temp_sstable_ptr].key: 23
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 24
+new_temp_sstable[temp_sstable_ptr].key: 24
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+Need to cascade merge level 2 with level 3
+
+
+====== INSIDE NEW MERGE! Need to merge level 2 with level 3
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 9 | new_child_data[child_ptr].key: 17
+new_temp_sstable[temp_sstable_ptr].key: 9
+new_curr_sstable[my_ptr].key: 13 | new_child_data[child_ptr].key: 17
+new_temp_sstable[temp_sstable_ptr].key: 13
+new_curr_sstable[my_ptr].key: 15 | new_child_data[child_ptr].key: 17
+new_temp_sstable[temp_sstable_ptr].key: 15
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 17
+new_temp_sstable[temp_sstable_ptr].key: 17
+new_child_data[child_ptr].key: 21
+new_temp_sstable[temp_sstable_ptr].key: 21
+new_child_data[child_ptr].key: 22
+new_temp_sstable[temp_sstable_ptr].key: 22
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 23
+new_temp_sstable[temp_sstable_ptr].key: 23
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 25
+new_temp_sstable[temp_sstable_ptr].key: 25
+NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: 15
+Logical Pairs: 15
+LVL0: 0, LVL1: 1, LVL2: 1, LVL3: 6, LVL4: 7, LVL5: 0, LVL6: 0, LVL7: 0, LVL8: 0, LVL9: 0, LVL10: 0, 
+
+25:-25:L1 
+
+23:-23:L2 
+
+9:-9:L3 13:-13:L3 15:-15:L3 17:-17:L3 21:-21:L3 22:-22:L3 
+
+1:-1:L4 2:-2:L4 3:-3:L4 4:-4:L4 5:-5:L4 7:-7:L4 8:-8:L4 
+
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 1
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 2's curr_size_: 2
+Bc we cascade merged, Just set level 1's curr_size_: 0
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 3 | new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 3
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_curr_sstable[my_ptr].key: 2 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 2
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+Assertion failed: (curr_size_ + num_elements_to_merge == temp_sstable_ptr), function merge, file lsm.cpp, line 514.
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 1
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 2's curr_size_: 2
+Bc we cascade merged, Just set level 1's curr_size_: 0
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 3 | new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 3
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_curr_sstable[my_ptr].key: 2 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 2
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+Just set level 2's curr_size_: 4
+Bc we cascade merged, Just set level 1's curr_size_: 0
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 5
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 5 | new_child_data[child_ptr].key: 6
+new_temp_sstable[temp_sstable_ptr].key: 5
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 6
+new_temp_sstable[temp_sstable_ptr].key: 6
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+Need to cascade merge level 2 with level 3
+
+
+====== INSIDE NEW MERGE! Need to merge level 2 with level 3
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+Just set level 3's curr_size_: 4
+Bc we cascade merged, Just set level 2's curr_size_: 0
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 5
+new_temp_sstable[temp_sstable_ptr].key: 5
+new_child_data[child_ptr].key: 6
+new_temp_sstable[temp_sstable_ptr].key: 6
+Just set level 2's curr_size_: 2
+Bc we cascade merged, Just set level 1's curr_size_: 0
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 7
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 7 | new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 7
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 8
+new_temp_sstable[temp_sstable_ptr].key: 8
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 5 | new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 5
+new_curr_sstable[my_ptr].key: 6 | new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 6
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 7
+new_temp_sstable[temp_sstable_ptr].key: 7
+Old current size of level 2: 2 | num_elements_to_merge: 2
+temp_sstable_ptr: 3
+Assertion failed: (curr_size_ + num_elements_to_merge == temp_sstable_ptr), function merge, file lsm.cpp, line 519.
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 1
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+
+Old current size of level 2: 0 | num_elements_to_merge: 2
+temp_sstable_ptr: 1
+Assertion failed: (curr_size_ + num_elements_to_merge == temp_sstable_ptr), function merge, file lsm.cpp, line 522.
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 1
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+WE SHOULD NOT BE HERE
+
+Old current size of level 2: 0 | num_elements_to_merge: 2
+temp_sstable_ptr: 1
+Assertion failed: (curr_size_ + num_elements_to_merge == temp_sstable_ptr), function merge, file lsm.cpp, line 523.
+
+
+=====NEW RUN=====
+
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 1
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 1
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_child_data[child_ptr].key: 2
+new_temp_sstable[temp_sstable_ptr].key: 2
+Just set level 2's curr_size_: 2
+Bc we cascade merged, Just set level 1's curr_size_: 0
+About to merge 2 sorted arrays...
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+Just set level 1's curr_size_: 1
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 3 | new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 3
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 4
+new_temp_sstable[temp_sstable_ptr].key: 4
+Just set level 1's curr_size_: 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 0 with level 1
+Need to cascade merge level 1 with level 2
+
+
+====== INSIDE NEW MERGE! Need to merge level 1 with level 2
+About to merge 2 sorted arrays...
+new_curr_sstable[my_ptr].key: 1 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 1
+new_curr_sstable[my_ptr].key: 2 | new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 2
+Copying leftover elements from child data over to new merged data...
+new_child_data[child_ptr].key: 3
+new_temp_sstable[temp_sstable_ptr].key: 3
+WE SHOULD NOT BE HERE
+
+Old current size of level 2: 2 | num_elements_to_merge: 2
+temp_sstable_ptr: 3
+Assertion failed: (curr_size_ + num_elements_to_merge == temp_sstable_ptr), function merge, file lsm.cpp, line 523.
