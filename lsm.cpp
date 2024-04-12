@@ -816,7 +816,6 @@ void lsm_tree::get(int key) {
 
 
     // if not found in buffer, then search across each LEVEL#.data file
-    bool result_found = false;
     int result;
     for (int i = 1; i <= MAX_LEVELS; ++i) {
         auto curr_level_ptr = levels_[i];
@@ -838,7 +837,7 @@ void lsm_tree::get(int key) {
                     exit(0);
                 }
 
-                lsm_data segment_buffer[341];
+                lsm_data segment_buffer[FENCE_PTR_EVERY_K_ENTRIES];
 
                 // Determine the number of entries to read for this segment
                 int entriesToRead = FENCE_PTR_EVERY_K_ENTRIES;
@@ -873,19 +872,17 @@ void lsm_tree::get(int key) {
                         if (segment_buffer[midpoint].value == DELETED_FLAG) {
                             cout << "KEY WAS DELETED" << endl;
                             cout << endl;
-                            result_found = true;
                             result = -1;
                         }
 
                         // else, key exists and is not deleted, so we print the value
                         else {
                             result = segment_buffer[midpoint].value;
-                            result_found = true;
-
                             cout << result << endl;
                         }
 
-                        break;
+                        close(curr_fd); // close fd before returning
+                        return;
 
                     } else if (segment_buffer[midpoint].key < key) {
                         left = midpoint + 1;
@@ -896,18 +893,7 @@ void lsm_tree::get(int key) {
 
                 close(curr_fd); // make sure to close the fd that we opened
             }
-
-            // break out of middle nested for loop that's iterating over each fence ptr
-            if (result_found) {
-                break;
-            }
         }
-
-        // break out of outer most for loop that's iterating over every level
-        if (result_found) {
-            break;
-        }
-
     }
 
     // cout << "Key: " << key << " WAS NOT FOUND!" << endl;
@@ -1043,9 +1029,9 @@ void lsm_tree::printStats() {
     set<int> deleted_keys;
     set<int> valid_keys;
 
-    unsigned long naive_sum = 0;
+    // unsigned long naive_sum = 0;
 
-    naive_sum += buffer_ptr_->curr_size_;
+    // naive_sum += buffer_ptr_->curr_size_;
 
     // print contents of buffer
     string buffer_contents = "";
@@ -1073,7 +1059,7 @@ void lsm_tree::printStats() {
 
     // print contents of each level's disk file by mmap and munmap
     for (int i = 1; i <= MAX_LEVELS; ++i) {
-        naive_sum += levels_[i]->curr_size_;
+        // naive_sum += levels_[i]->curr_size_;
         // cout << "===Level " << i << " contents===" << endl;
         // auto curr_level_ptr = levels_[i];
 
@@ -1140,7 +1126,7 @@ void lsm_tree::printStats() {
         // }
     }
 
-    cout << "NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: " << naive_sum << endl;
+    // cout << "NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: " << naive_sum << endl;
 
     terminal_output[0] = "Logical Pairs: " + to_string(valid_keys.size());
 
