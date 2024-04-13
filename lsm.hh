@@ -6,15 +6,18 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <cstring>
 #include <set>
 #include <cassert>
 #include "bloom_filter.hh"
 #include <climits>
+#include <cerrno>
+#include <cstring>
 
-#define INITIAL_LEVEL_CAPACITY      512
-#define SIZE_RATIO                  2
+#define INITIAL_LEVEL_CAPACITY      1024
+#define SIZE_RATIO                  7
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             50
 #define MAX_LEVELS                  10

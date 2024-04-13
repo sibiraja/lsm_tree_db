@@ -47,7 +47,7 @@ level::level(int capacity, int curr_level) {
     else {
         int fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
         if (fd == -1) {
-            cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+            cout << "Error in opening / creating " << disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
 
@@ -56,7 +56,7 @@ level::level(int capacity, int curr_level) {
         
         if(rflag == -1)
         {
-            cout << "Lseek failed! Exiting program" << endl;
+            cout << "Lseek failed in creating an empty file for level " << this->curr_level_ << "! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(fd);
             exit(0);
         }
@@ -65,7 +65,7 @@ level::level(int capacity, int curr_level) {
         rflag = write(fd, "", 1);
         if(rflag == -1)
         {
-            cout << "Writing empty string failed! Exiting program" << endl;
+            cout << "Writing empty string failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(fd);
             exit(0);
         }
@@ -252,14 +252,14 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
         int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
         if (curr_fd == -1) {
-            cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+            cout << "Error in opening / creating " << disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
         
         lsm_data* curr_file_ptr = (lsm_data*) mmap(0,max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
         if (curr_file_ptr == MAP_FAILED)
         {
-            cout << "mmap() on the current level's file failed! Exiting program" << endl;
+            cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(curr_fd);
             exit(0);
         }
@@ -313,14 +313,14 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
         // new_child_data = mmap the level's disk file
         child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
         if (child_fd == -1) {
-            cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Exiting program" << endl;
+            cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
         new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
 
         if (new_child_data == MAP_FAILED)
         {
-            cout << "mmap() on the child's file failed! Exiting program" << endl;
+            cout << "mmap() on the child's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(child_fd);
             exit(0);
         }
@@ -329,13 +329,13 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     // mmap() current file's contents
     int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
     if (curr_fd == -1) {
-        cout << "Error in opening / creating " << disk_file_name_ << " file! Exiting program" << endl;
+        cout << "Error in opening / creating " << disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
         exit(0);
     }
     lsm_data* new_curr_sstable = (lsm_data*) mmap(0, max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
     if (new_curr_sstable == MAP_FAILED)
     {
-        cout << "mmap() on the current level's file failed! Exiting program" << endl;
+        cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
         close(child_fd);
         exit(0);
     }
@@ -345,7 +345,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
     int temp_fd = open("TEMP.data", O_RDWR | O_CREAT, (mode_t)0600);
     if (temp_fd == -1) {
-        cout << "Error in opening / creating TEMP.data file! Exiting program" << endl;
+        cout << "Error in opening / creating TEMP.data file! Error message: " << strerror(errno) << " | Exiting program" << endl;
         exit(0);
     }
 
@@ -354,7 +354,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     
     if(rflag == -1)
     {
-        cout << "Lseek failed! Exiting program" << endl;
+        cout << "Lseek failed in creating a temporary file for level " << this->curr_level_ << " in merge()! Error message: " << strerror(errno) << " | Exiting program" << endl;
         close(temp_fd);
         exit(0);
     }
@@ -363,7 +363,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     rflag = write(temp_fd, "", 1);
     if(rflag == -1)
     {
-        cout << "Writing empty string failed! Exiting program" << endl;
+        cout << "Writing empty string failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
         close(temp_fd);
         exit(0);
     }
@@ -371,7 +371,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     lsm_data* new_temp_sstable = (lsm_data*) mmap(0, max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, temp_fd, 0);
     if (new_temp_sstable == MAP_FAILED)
     {
-        cout << "mmap() on the current level's file failed! Exiting program" << endl;
+        cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
         close(temp_fd);
         exit(0);
     }
@@ -595,14 +595,14 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     if (remove(disk_file_name_.c_str()) == 0) {
         // cout << disk_file_name_ << " deleted successfully" << endl;
     } else {
-        cout << "Error in deleting " << disk_file_name_ << endl;
+        cout << "Error in deleting " << disk_file_name_ << ", Error message: " << strerror(errno) << " | Exiting program" << endl;
         exit(0);
     }
 
     if (rename("TEMP.data", disk_file_name_.c_str()) == 0) {
         // cout << "Successfully renamed temp file to " << disk_file_name_ << endl;
     } else {
-        cout << "Error in renaming temp file" << endl;
+        cout << "Error in renaming temp file" << " , Error message: " << strerror(errno) << " | Exiting program" << endl;
         exit(0);
     }
 
@@ -699,7 +699,7 @@ lsm_tree::lsm_tree() {
     
         int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
         if (fd == -1) {
-            cout << "Error in opening / creating global `level_metadata` file! Exiting program" << endl;
+            cout << "Error in opening / creating global `level_metadata` file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
 
@@ -708,7 +708,7 @@ lsm_tree::lsm_tree() {
         
         if(rflag == -1)
         {
-            cout << "Lseek failed! Exiting program" << endl;
+            cout << "Lseek failed when seeking in metadata file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(fd);
             exit(0);
         }
@@ -717,7 +717,7 @@ lsm_tree::lsm_tree() {
         rflag = write(fd, "", 1);
         if(rflag == -1)
         {
-            cout << "Writing empty string failed! Exiting program" << endl;
+            cout << "Writing empty string failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(fd);
             exit(0);
         }
@@ -726,7 +726,7 @@ lsm_tree::lsm_tree() {
         metadata_file_ptr = (int*) mmap(0,(MAX_LEVELS * sizeof(int)), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
         if (metadata_file_ptr == MAP_FAILED)
         {
-            cout << "mmap() on the metadata file failed! Exiting program" << endl;
+            cout << "mmap() on the metadata file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(fd);
             exit(0);
         }
@@ -749,14 +749,14 @@ lsm_tree::lsm_tree() {
     else {
         int fd = open(metadata_filename, O_RDWR | O_CREAT, (mode_t)0600);
         if (fd == -1) {
-            cout << "Error in opening / creating global `level_metadata` file! Exiting program" << endl;
+            cout << "Error in opening / creating global `level_metadata` file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
 
         metadata_file_ptr = (int*) mmap(0,(MAX_LEVELS * sizeof(int)), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
         if (metadata_file_ptr == MAP_FAILED)
         {
-            cout << "mmap() on the metadata file failed! Exiting program" << endl;
+            cout << "mmap() on the metadata file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(fd);
             exit(0);
         }
@@ -838,7 +838,7 @@ void lsm_tree::get(int key) {
                 int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
 
                 if (curr_fd == -1) {
-                    cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+                    cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
                     exit(0);
                 }
 
@@ -947,7 +947,7 @@ void lsm_tree::range(int start, int end) {
                 int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
 
                 if (curr_fd == -1) {
-                    cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+                    cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
                     exit(0);
                 }
 
@@ -1070,13 +1070,13 @@ void lsm_tree::printStats() {
 
         int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
         if (curr_fd == -1) {
-            cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Exiting program" << endl;
+            cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
         lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
         if (new_curr_sstable == MAP_FAILED)
         {
-            cout << "mmap() on the current level's file failed! Exiting program" << endl;
+            cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
             close(curr_fd);
             exit(0);
         }
