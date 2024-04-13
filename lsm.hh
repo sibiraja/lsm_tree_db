@@ -11,6 +11,7 @@
 #include <set>
 #include <cassert>
 #include "bloom_filter.hh"
+#include <climits>
 
 #define INITIAL_LEVEL_CAPACITY      512
 #define SIZE_RATIO                  2
@@ -99,13 +100,13 @@ public:
 
     void get(int key);
 
-    // TODO: performance should asymptotically be better than simply querying every key in the range using GET.
     void range(int start, int end);
 
     void delete_key(int key);
 
-    // TODO: figure out logic for print stats function, right now this is just for my own testing purposes
     void printStats();
+
+    void cleanup();
 };
 
 #endif // LSM_HH

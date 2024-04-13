@@ -121,6 +121,7 @@ void level::fp_construct() {
     }
 
     // dynamically allocate memory for the fence pointers array
+    delete[] fp_array_;
     fp_array_ = new fence_ptr[num_fence_ptrs_];
 
     for (int i = 0; i < num_fence_ptrs_; i++) {
@@ -197,6 +198,7 @@ void level::bf_fp_construct() {
     }
 
     // dynamically allocate memory for the fence pointers array
+    delete fp_array_;
     fp_array_ = new fence_ptr[num_fence_ptrs_];
 
     // Loop to construct fence pointers
@@ -235,6 +237,9 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     // cout << endl;
     // cout << endl;
     // cout << "====== INSIDE NEW MERGE! Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
+    if (num_elements_to_merge <= 0) {
+        return true;
+    }
 
     // check for a potential cascade of merges
     if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
@@ -1149,4 +1154,22 @@ void lsm_tree::printStats() {
     //         cout << "Key " << i << " IS IN DELETED" << endl;
     //     }
     // }
+}
+
+
+// lsm_tree::cleanup()
+//      This function is called upon the user issuing the shutdown command (`e` on the keyboard), and it takes care of memory cleanup
+void lsm_tree::cleanup() {
+    // delete memory allocated for buffer (buffer object and array for buffer's data)
+    delete[] this->buffer_ptr_->buffer_;
+    delete this->buffer_ptr_;
+
+    // delete each level's fence ptr array, bloom filters, and level object itself
+    for (int i = 1; i <= MAX_LEVELS; ++i) {
+        delete levels_[i]->filter_;
+        delete[] levels_[i]->fp_array_;
+        delete levels_[i];
+    }
+
+    return;
 }

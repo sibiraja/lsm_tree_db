@@ -77,7 +77,10 @@ int main() {
                 db->flush_buffer();
                 break;
             case 'e':
-                exit(0);
+                db->flush_buffer();
+                db->cleanup();
+                delete db;
+                return 0;
             default:
                 cout << "Unknown command: " << command << endl;
         }
