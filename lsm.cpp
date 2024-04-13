@@ -27,7 +27,25 @@ level::level(int capacity, int curr_level) {
     // NEW DISK STORAGE IMPLEMENTATION CODE
     disk_file_name_ = "LEVEL" + to_string(curr_level_) + ".data";
     // max_file_size = 4096 * curr_level_;
-    max_file_size = ((this->capacity_ * 12 + 4095) / 4096) * 4096;
+    // max_file_size = ((this->capacity_ * sizeof(lsm_data) + 4095) / 4096) * 4096; // this is so each level's disk file is rounded to the nearest page in bytes (size-wise)
+    uint64_t calculated_size = this->capacity_ * sizeof(lsm_data);
+    if (calculated_size / sizeof(lsm_data) != this->capacity_) {
+        std::cerr << "Overflow detected when calculating base size!" << std::endl;
+        cout << "calculated_size / sizeof(lsm_data) = " << calculated_size / sizeof(lsm_data) << "| this->capacity_: " << this->capacity_ << endl;
+        exit(EXIT_FAILURE);
+    }
+    uint64_t padded_size = calculated_size + 4095;
+    if (padded_size < calculated_size) {  // Check for overflow
+        std::cerr << "Overflow detected after adding padding!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    max_file_size = (padded_size / 4096) * 4096;
+    // if (max_file_size < padded_size) {  // Check for overflow
+    //     std::cerr << "Overflow detected after adjusting to block size!" << std::endl;
+    //     cout << "padded_size: " << padded_size << " | max_file_size: " << max_file_size << endl;
+    //     exit(EXIT_FAILURE);
+    // }
+
 
     // in case we already have data for this level, udpate the curr_size count using the level metadata file and re-construct bloom filters and fence pointers
     struct stat file_exists;
@@ -52,6 +70,7 @@ level::level(int capacity, int curr_level) {
         }
 
         /* Moving the file pointer to the end of the file*/
+        cout << "Attempting lseek on level " << this->curr_level_ << " with size " << max_file_size << endl;
         int rflag = lseek(fd, max_file_size-1, SEEK_SET);
         
         if(rflag == -1)
@@ -62,6 +81,7 @@ level::level(int capacity, int curr_level) {
         }
 
         /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+        cout << "Going to write empty string to EOF" << endl;
         rflag = write(fd, "", 1);
         if(rflag == -1)
         {
@@ -70,6 +90,7 @@ level::level(int capacity, int curr_level) {
             exit(0);
         }
 
+        cout << "Going to mmap()" << endl;
         lsm_data* curr_level_data = (lsm_data*) mmap(0, max_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (curr_level_data == MAP_FAILED)
         {
@@ -77,7 +98,14 @@ level::level(int capacity, int curr_level) {
             printf("Mmap failed.\n");
             exit(0);
         }
-        memset(curr_level_data, 0, max_file_size);
+        
+        // No longer memset()'ing each level's disk file beacause I noticed that it takes a long time to memset for larger files, and I don't need
+        // it for correctness anyways since we only access portions of the file using the capacity_ and/or curr_size_ variables. Since those are
+        // correctly maintained -- and metadata file is memset() in LSM tree startup anyways -- we don't need to memset data files on disk.
+
+        // cout << "Going to memset()" << endl;
+        // memset(curr_level_data, 0, max_file_size);
+
         rflag = msync(curr_level_data, max_file_size, MS_SYNC);
 
         if(rflag == -1)
@@ -85,18 +113,21 @@ level::level(int capacity, int curr_level) {
             printf("Unable to msync.\n");
             exit(0);
         }
+        cout << "Going to fsync()" << endl;
         // fsync the file descriptor to ensure data is written to disk
         if (fsync(fd) == -1) {
             perror("fsync error");
             exit(0);
             // Handle error
         }
+        cout << "Going to munmap()" << endl;
         rflag = munmap(curr_level_data, max_file_size);
         if(rflag == -1)
         {
             printf("Unable to munmap.\n");
             exit(0);
         }
+        cout << "Done setting up level " << curr_level_ << "!" << endl;
         close(fd);
     }
 
@@ -264,7 +295,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
             exit(0);
         }
 
-        memset(curr_file_ptr, 0, max_file_size);
+        // memset(curr_file_ptr, 0, max_file_size);
         int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
         if(rflag == -1) {
             printf("Unable to msync.\n");

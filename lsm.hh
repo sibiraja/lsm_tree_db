@@ -17,7 +17,7 @@
 #include <cstring>
 
 #define INITIAL_LEVEL_CAPACITY      1024
-#define SIZE_RATIO                  7
+#define SIZE_RATIO                  6
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             50
 #define MAX_LEVELS                  10
@@ -37,7 +37,7 @@ struct lsm_data {
 struct fence_ptr {
     int min_key;
     int max_key;
-    int offset;
+    off_t offset;
 };
 
 // TODO: just have declarations in this file and move implementation of each function to a `lsm.cpp` file later after initial testing
@@ -55,7 +55,7 @@ public:
     bloom_filter* filter_ = nullptr; // explicitly set to nullptr so calling delete on this if it hasn't been set to an actual bloom filter object won't break our code (deleting nullptr is safe)
 
     string disk_file_name_;
-    int max_file_size;
+    uint64_t max_file_size;
 
     level(int capacity, int curr_level);
 
