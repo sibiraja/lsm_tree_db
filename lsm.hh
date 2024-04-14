@@ -15,9 +15,10 @@
 #include <climits>
 #include <cerrno>
 #include <cstring>
+#include <sstream>
 
 #define INITIAL_LEVEL_CAPACITY      1024
-#define SIZE_RATIO                  6
+#define SIZE_RATIO                  2
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             50
 #define MAX_LEVELS                  10
@@ -101,13 +102,13 @@ public:
 
     void flush_buffer();
 
-    void get(int key);
+    string get(int key);
 
-    void range(int start, int end);
+    string range(int start, int end);
 
     void delete_key(int key);
 
-    void printStats();
+    string printStats();
 
     void cleanup();
 };

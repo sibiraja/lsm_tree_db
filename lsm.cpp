@@ -834,25 +834,28 @@ void lsm_tree::flush_buffer() {
 //      to ensure that the most recent data is searched through first. Once the key is found, we immediately return
 //      After initially searching through the buffer naively, we then query each level's bloom filters and fence ptrs
 //      to optimize our search by only doing 1 read on disk.
-void lsm_tree::get(int key) {
+string lsm_tree::get(int key) {
+    stringstream ss;
     // do linear search on the buffer (since buffer isn't sorted)
     for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
         if (buffer_ptr_->buffer_[i].key == key) {
             if (buffer_ptr_->buffer_[i].value == DELETED_FLAG) {
-                cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
-                cout << endl;
-                return;
+                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
+                // cout << endl;
+                ss << endl;
+                return ss.str();
             }
 
             // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
-            cout << buffer_ptr_->buffer_[i].value << endl;
-            return;
+            // cout << buffer_ptr_->buffer_[i].value << endl;
+            ss << buffer_ptr_->buffer_[i].value << endl;
+            return ss.str();
         }
     }
 
 
     // if not found in buffer, then search across each LEVEL#.data file
-    int result;
+    // int result;
     for (int i = 1; i <= MAX_LEVELS; ++i) {
         auto curr_level_ptr = levels_[i];
         auto curr_bloom_filter = levels_[i]->filter_;
@@ -887,12 +890,12 @@ void lsm_tree::get(int key) {
                 ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
                 if (bytesRead < 0) {
                     cout << "Error reading from file" << endl;
-                    return;
+                    exit(EXIT_FAILURE);
                 }
 
                 if (bytesRead % sizeof(lsm_data) != 0) {
                     cout << "Did not read a full data entry in pread()!" << endl;
-                    return;
+                    exit(EXIT_FAILURE);
                 }
 
                 int num_entries_in_segment = bytesRead / sizeof(lsm_data);
@@ -906,19 +909,22 @@ void lsm_tree::get(int key) {
                     if (segment_buffer[midpoint].key == key) {
 
                         if (segment_buffer[midpoint].value == DELETED_FLAG) {
-                            cout << "KEY WAS DELETED" << endl;
-                            cout << endl;
-                            result = -1;
+                            // cout << "KEY WAS DELETED" << endl;
+                            // cout << endl;
+                            // result = -1;
+                            // ss << DELETED_FLAG << endl; // don't do this bc we don't want to print anything if key was deleted
+                            ss << endl;
                         }
 
                         // else, key exists and is not deleted, so we print the value
                         else {
-                            result = segment_buffer[midpoint].value;
-                            cout << result << endl;
+                            // result = segment_buffer[midpoint].value;
+                            // cout << result << endl;
+                            ss << to_string(segment_buffer[midpoint].value) << endl;
                         }
 
                         close(curr_fd); // close fd before returning
-                        return;
+                        return ss.str();
 
                     } else if (segment_buffer[midpoint].key < key) {
                         left = midpoint + 1;
@@ -933,7 +939,8 @@ void lsm_tree::get(int key) {
     }
 
     // cout << "Key: " << key << " WAS NOT FOUND!" << endl;
-    return;
+    ss << endl;
+    return ss.str();
 }
 
 // lsm_tree::range()
@@ -942,11 +949,13 @@ void lsm_tree::get(int key) {
 //      through the corresponding segment for each fence ptr if the range covered by the fence ptr overlaps with the 
 //      given range. Note that we search from lower levels to higher levels and maintain a set with keys that we have found
 //      already to ensure we have the most recent values for each key.
-void lsm_tree::range(int start, int end) {
+string lsm_tree::range(int start, int end) {
     // for (int i = start; i < end; ++i) {
     //     get(i, true);
     // }
     // cout << endl; // to end the line that the space delineated list of all the found pairs in the given range were printed on inside `get()`
+
+    stringstream ss;
     
     set<int> keys_found;
 
@@ -956,7 +965,8 @@ void lsm_tree::range(int start, int end) {
         auto curr_lsm_entry = buffer_ptr_->buffer_[i];
         if (start <= curr_lsm_entry.key && curr_lsm_entry.key < end) {
             if (curr_lsm_entry.value != DELETED_FLAG) {
-                cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
+                // cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
+                ss << to_string(curr_lsm_entry.key) << ":" << to_string(curr_lsm_entry.value) << " ";
             }
 
             keys_found.insert(curr_lsm_entry.key);
@@ -996,12 +1006,12 @@ void lsm_tree::range(int start, int end) {
                 ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
                 if (bytesRead < 0) {
                     cout << "Error reading from file" << endl;
-                    return;
+                    exit(EXIT_FAILURE);
                 }
 
                 if (bytesRead % sizeof(lsm_data) != 0) {
                     cout << "Did not read a full data entry in pread()!" << endl;
-                    return;
+                    exit(EXIT_FAILURE);
                 }
 
                 int num_entries_in_segment = bytesRead / sizeof(lsm_data);
@@ -1011,7 +1021,8 @@ void lsm_tree::range(int start, int end) {
                 for (int k = 0; k < num_entries_in_segment; ++k) {
                     if (start <= segment_buffer[k].key && segment_buffer[k].key < end && keys_found.find(segment_buffer[k].key) == keys_found.end()) {
                         if (segment_buffer[k].value != DELETED_FLAG) {
-                            cout << segment_buffer[k].key << ":" << segment_buffer[k].value << " ";
+                            // cout << segment_buffer[k].key << ":" << segment_buffer[k].value << " ";
+                            ss << to_string(segment_buffer[k].key) << ":" << to_string(segment_buffer[k].value) << " ";
                         }
 
                         keys_found.insert(segment_buffer[k].key);
@@ -1024,8 +1035,9 @@ void lsm_tree::range(int start, int end) {
         }
     }
 
-    cout << endl;
-    return;
+    // cout << endl;
+    ss << endl;
+    return ss.str();
 }
 
 // lsm_tree::delete_key()
@@ -1055,7 +1067,7 @@ void lsm_tree::delete_key(int key) {
 //      This function prints the number of logical key-value pairs in the lsm tree (keys that are not deleted or
 //      stale keys to be deleted on a merge), the number of keys in each level of the tree, and a dump of the 
 //      entire tree that includes the key, value, and which level it is on 
-void lsm_tree::printStats() {
+string lsm_tree::printStats() {
 
     // main logic behind this is to iterate from buffer to larger levels, and keep track of valid and deleted keys using sets to correctly count logical pairs, but
     // this can get out of hand real fast once our database has millions of keys that it has stored, so `TODO: come back to this later to scale better`
@@ -1064,6 +1076,8 @@ void lsm_tree::printStats() {
     terminal_output.push_back(""); // same logic as above, this stores the count of entries at each level
     set<int> deleted_keys;
     set<int> valid_keys;
+
+    stringstream ss;
 
     // unsigned long naive_sum = 0;
 
@@ -1168,13 +1182,17 @@ void lsm_tree::printStats() {
 
     for (unsigned long i = 0; i < terminal_output.size(); ++i) {
         if (terminal_output[i].length() > 0) {
-            cout << terminal_output[i] << endl;
+            // cout << terminal_output[i] << endl;
+            ss << terminal_output[i] << endl;
             // empty line to match formatting as per project requirements document
             if (i >= 1) {
-                cout << endl;
+                // cout << endl;
+                ss << endl;
             }
         }
     }
+
+    return ss.str();
 
     // for (int i = 1; i <= 1000; ++i) {
     //     if (valid_keys.find(i) == valid_keys.end()) {

@@ -39,7 +39,7 @@ int main() {
         istringstream iss(line);
         char command;
         int key, value, startKey, endKey;
-        string fileName;
+        string fileName, return_string;
         iss >> command;
         switch (command) {
             case 'p':
@@ -50,7 +50,8 @@ int main() {
                 break;
             case 'g':
                 iss >> key;
-                db->get(key);
+                return_string = db->get(key);
+                cout << return_string;
                 // get(key);
                 break;
             case 'd':
@@ -60,7 +61,8 @@ int main() {
                 break;
             case 'r': {
                 iss >> startKey >> endKey;
-                db->range(startKey, endKey);
+                return_string = db->range(startKey, endKey);
+                cout << return_string;
                 // range(startKey, endKey);
                 break;
             }
@@ -71,7 +73,8 @@ int main() {
             }
             case 's':
                 // TODO: need to implement printStats() function in `lsm.hh` once bloom filters and fence pointers are integrated
-                db->printStats();
+                return_string = db->printStats();
+                cout << return_string;
                 break;
             case 'f':
                 db->flush_buffer();
