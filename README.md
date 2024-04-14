@@ -2,8 +2,9 @@
 Log-structured merge-tree
 
 ##
-- I MIGHT HAVE UNDEFINED BEHAVIOR, AND DOCKER CONTAINERS COULD MASK THAT. RUN CODEBASE LOCALLY ON MACOS AND TRY TO DEBUG WITH GDB. DON'T USE DOCKER.
 - Docker for debugging with GDB: `docker build -t lsm_tree`, and `docker run -it --rm -v /Users/sibiraja/Desktop/lsm_tree_db:/usr/src/lsm_tree lsm_tree`
+    - Note that Docker containers can mask undefined behavior that I get when running locally on my MacOS, so make sure to run locally first and debug with GDB instead of
+    debugging anything with Docker
 
 ## Running database
 - Running `make` compiles necessary files, running `make clean` removes all the disk files and log file 
@@ -11,9 +12,10 @@ Log-structured merge-tree
 - Run `python3 custom_workload.py` to generate the `commands.txt` file
 - Can also execute `g++ -std=c++11 -o database database.cpp` to compile to get C++ 11 features
 - Make sure to run code on a host Linux OS (not MacOS with a Docker image) when running experiments because I need `perf`. Currently running on an Ubuntu-VM with VirtualBox. Execute the following command while logged in as a root user: `sudo perf stat ./database`
+- To test client-server functionality, run `telnet localhost 8081` in a separate terminal to connect to database server as a client
 
 ## Notes:
-- there is a (probabilistic because it only occurs sometimes -- makes no sense since I have no multi-process or multi-threaded capability yet) bug where the number of logical pairs is incorrect during my initial test of 1000 insertions, where it sometimes is under 1,000. However, when inspecting the contents of each level, all the entries seem to be there, so I'm not sure what is going on, but reminder to self: `TODO: come back to this!`. but might just be in the `printStats()` function of calculting number of logical pairs, so not a priority right now 
+- Need to design a synchronization plan
 
 
 ### Name ideas:

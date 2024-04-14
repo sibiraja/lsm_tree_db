@@ -433,6 +433,8 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
     // cout << "About to merge 2 sorted arrays..." << endl;
 
+    set<int> deleted_keys;
+
     while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
         // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
@@ -448,12 +450,15 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
         // if currently at a deleted key at either list, skip over it
         // --> this case is when the lists have unique keys but they have been deleted themselves already, so we should not merge them
-        if (new_curr_sstable[my_ptr].value == DELETED_FLAG) {
+        if (new_curr_sstable[my_ptr].value == DELETED_FLAG || deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
+            deleted_keys.erase(new_curr_sstable[my_ptr].key);
             ++my_ptr;
             continue;
         }
         
+        // if child's current key is deleted, add to a deleted set and move to next child entry
         if (new_child_data[child_ptr].value == DELETED_FLAG) {
+            deleted_keys.insert(new_child_data[child_ptr].key);
             ++child_ptr;
             continue;
         }
@@ -477,7 +482,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
             ++child_ptr;
             ++my_ptr;
 
-            cout << "WE SHOULD NOT HAVE 2 KEYS THAT ARE EQUAL IN MY CUSTOM COMMANDS WORKLOAD" << endl;
+            // cout << "WE SHOULD NOT HAVE 2 KEYS THAT ARE EQUAL IN MY CUSTOM COMMANDS WORKLOAD" << endl;
         }
 
         // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
@@ -494,7 +499,8 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     while (my_ptr < curr_size_ ) {
         // skip over deleted elements here
         // assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
-        if (new_curr_sstable[my_ptr].value == DELETED_FLAG) {
+        if (new_curr_sstable[my_ptr].value == DELETED_FLAG || deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
+            deleted_keys.erase(new_curr_sstable[my_ptr].key);
             ++my_ptr;
             continue;
         }
@@ -546,16 +552,16 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 
     // cout << "Finished third merging loop" << endl;
 
-    // THIS IS FOR THE COMMANDS AND NEW_COMMANDS WORKLOADS ONLY SINCE THERE ARE NO DELETIONS OR OVERWRITES:
-    if(curr_size_ + num_elements_to_merge != temp_sstable_ptr) {
-        cout << endl;
-        cout << "Old current size of level " << this->curr_level_ << ": " << curr_size_ << " | num_elements_to_merge: " << num_elements_to_merge << endl;
-        cout << "temp_sstable_ptr: " << temp_sstable_ptr << endl;
-    }
-    if (child_level >= 1) {
-        assert(levels_[child_level]->curr_size_ == num_elements_to_merge);
-    }
-    assert(curr_size_ + num_elements_to_merge == temp_sstable_ptr);
+    // // THIS IS FOR THE COMMANDS AND NEW_COMMANDS WORKLOADS ONLY SINCE THERE ARE NO DELETIONS OR OVERWRITES:
+    // if(curr_size_ + num_elements_to_merge != temp_sstable_ptr) {
+    //     cout << endl;
+    //     cout << "Old current size of level " << this->curr_level_ << ": " << curr_size_ << " | num_elements_to_merge: " << num_elements_to_merge << endl;
+    //     cout << "temp_sstable_ptr: " << temp_sstable_ptr << endl;
+    // }
+    // if (child_level >= 1) {
+    //     assert(levels_[child_level]->curr_size_ == num_elements_to_merge);
+    // }
+    // assert(curr_size_ + num_elements_to_merge == temp_sstable_ptr);
 
 
     curr_size_ = temp_sstable_ptr;
