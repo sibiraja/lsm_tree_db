@@ -440,28 +440,35 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
         // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
         // assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
         
+        // // if child's current key is deleted, add to a deleted set and move to next child entry
+        // if (new_child_data[child_ptr].value == DELETED_FLAG) {
+        //     deleted_keys.insert(new_child_data[child_ptr].key);
+        //     ++child_ptr;
+        //     continue;
+        // }
+
+        // if (deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
+        //     deleted_keys.erase(new_curr_sstable[my_ptr].key);
+        //     ++my_ptr;
+        //     continue;
+        // }
 
         // if both are the same key, and either one is deleted, skip over both
-        if (new_curr_sstable[my_ptr].key == new_child_data[child_ptr].key && (new_curr_sstable[my_ptr].value == DELETED_FLAG || new_child_data[child_ptr].value == DELETED_FLAG)) {
+        if (new_curr_sstable[my_ptr].key == new_child_data[child_ptr].key && (new_child_data[child_ptr].value == DELETED_FLAG)) {
             ++my_ptr;
             ++child_ptr;
             continue; // so we don't execute the below conditions
         } 
 
-        // if currently at a deleted key at either list, skip over it
-        // --> this case is when the lists have unique keys but they have been deleted themselves already, so we should not merge them
-        if (new_curr_sstable[my_ptr].value == DELETED_FLAG || deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
-            deleted_keys.erase(new_curr_sstable[my_ptr].key);
-            ++my_ptr;
-            continue;
-        }
+        // // if currently at a deleted key at either list, skip over it
+        // // --> this case is when the lists have unique keys but they have been deleted themselves already, so we should not merge them
+        // if (new_curr_sstable[my_ptr].value == DELETED_FLAG || deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
+        //     deleted_keys.erase(new_curr_sstable[my_ptr].key);
+        //     ++my_ptr;
+        //     continue;
+        // }
         
-        // if child's current key is deleted, add to a deleted set and move to next child entry
-        if (new_child_data[child_ptr].value == DELETED_FLAG) {
-            deleted_keys.insert(new_child_data[child_ptr].key);
-            ++child_ptr;
-            continue;
-        }
+        
 
         // cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << " | new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
 
@@ -499,11 +506,11 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     while (my_ptr < curr_size_ ) {
         // skip over deleted elements here
         // assert(new_curr_sstable[my_ptr].key == sstable_[my_ptr].key && new_curr_sstable[my_ptr].value == sstable_[my_ptr].value && new_curr_sstable[my_ptr].deleted == sstable_[my_ptr].deleted);
-        if (new_curr_sstable[my_ptr].value == DELETED_FLAG || deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
-            deleted_keys.erase(new_curr_sstable[my_ptr].key);
-            ++my_ptr;
-            continue;
-        }
+        // if (new_curr_sstable[my_ptr].value == DELETED_FLAG || deleted_keys.find(new_curr_sstable[my_ptr].key) != deleted_keys.end()) {
+        //     deleted_keys.erase(new_curr_sstable[my_ptr].key);
+        //     ++my_ptr;
+        //     continue;
+        // }
 
         // cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << endl;
 
@@ -532,11 +539,11 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     while (child_ptr < num_elements_to_merge ) {
         // skip over deleted elements here
         // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
-        if (new_child_data[child_ptr].value == DELETED_FLAG) {
-            cout << "WE SHOULD NOT BE HERE" << endl;
-            ++child_ptr;
-            continue;
-        }
+        // if (new_child_data[child_ptr].value == DELETED_FLAG) {
+        //     cout << "WE SHOULD NOT BE HERE" << endl;
+        //     ++child_ptr;
+        //     continue;
+        // }
 
         // cout << "new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
 
