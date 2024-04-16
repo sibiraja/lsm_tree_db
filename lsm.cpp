@@ -18,6 +18,7 @@ using namespace std;
 //      This constructor either starts a level from scratch or reuses any data that we have on disk for
 //      a level
 level::level(int capacity, int curr_level) {
+    lock_guard<mutex> curr_level_lock(this->mutex_);
     capacity_ = capacity;
     curr_level_ = curr_level;
 
@@ -268,6 +269,8 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     // cout << endl;
     // cout << endl;
     // cout << "====== INSIDE NEW MERGE! Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
+    lock_guard<mutex> curr_level_lock(this->mutex_);
+
     if (num_elements_to_merge <= 0) {
         return true;
     }
@@ -674,6 +677,7 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
 // buffer::buffer() constructor
 //      Just sets the ptr of the buffer's data to fresh place in memory, ready to store data
 buffer::buffer() {
+    lock_guard<mutex> buffer_lock(this->mutex_);
     buffer_ = new lsm_data[BUFFER_CAPACITY];
 }
     
@@ -685,6 +689,10 @@ bool buffer::insert(lsm_data kv_pair) {
     // first search through buffer, and if it exists, just update the key value struct directly to be the new value
     // --> since simply adding a new entry to the buffer for updating might not cause the old entry to be deleted when merging later on since original comes before the new entry
     // do linear search on the buffer (since buffer isn't sorted)
+
+    // GET LOCK ON BUFFER HERE
+    lock_guard<mutex> buffer_lock(this->mutex_);
+
     for (int i = 0; i < curr_size_; ++i) {
         if (buffer_[i].key == kv_pair.key) {
             // cout << "DUPLICATE ENTRY FOUND FOR: (" << buffer_[i].key << ", " << buffer_[i].value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
@@ -717,6 +725,9 @@ bool buffer::insert(lsm_data kv_pair) {
 //      This function is called at the lsm_tree object's flush() function. It causes the buffer to merge it's data with
 //      the data at Level 1, using the level's merge() function, which triggers a cascade merge if necessary
 void buffer::flush() {
+    // GET LOCK ON BUFFER HERE
+    lock_guard<mutex> buffer_lock(this->mutex_);
+
     // Sort the buffer before merging
     std::sort(buffer_, buffer_ + curr_size_, [](const lsm_data& a, const lsm_data& b) {
         return a.key < b.key;
@@ -850,27 +861,35 @@ void lsm_tree::flush_buffer() {
 string lsm_tree::get(int key) {
     stringstream ss;
     // do linear search on the buffer (since buffer isn't sorted)
-    for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
-        if (buffer_ptr_->buffer_[i].key == key) {
-            if (buffer_ptr_->buffer_[i].value == DELETED_FLAG) {
-                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
-                // cout << endl;
-                ss << endl;
+
+    // GET LOCK ON BUFFER HERE, in a code snippet with separate scope to make sure the buffer's lock is not
+    // held when we search through each level's data
+    {
+        lock_guard<mutex> buffer_lock(buffer_ptr_->mutex_);
+        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
+            if (buffer_ptr_->buffer_[i].key == key) {
+                if (buffer_ptr_->buffer_[i].value == DELETED_FLAG) {
+                    // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
+                    // cout << endl;
+                    ss << endl;
+                    return ss.str();
+                }
+
+                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
+                // cout << buffer_ptr_->buffer_[i].value << endl;
+                ss << buffer_ptr_->buffer_[i].value << endl;
                 return ss.str();
             }
-
-            // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
-            // cout << buffer_ptr_->buffer_[i].value << endl;
-            ss << buffer_ptr_->buffer_[i].value << endl;
-            return ss.str();
         }
     }
+    
 
 
     // if not found in buffer, then search across each LEVEL#.data file
     // int result;
     for (int i = 1; i <= MAX_LEVELS; ++i) {
         auto curr_level_ptr = levels_[i];
+        lock_guard<mutex> curr_level_lock(curr_level_ptr->mutex_); // GET LOCK ON CURR LEVEL HERE
         auto curr_bloom_filter = levels_[i]->filter_;
         // bloom filter might not have been created yet, so check if it's nullptr as well as if the key is not in the bloom filter
         if (!curr_bloom_filter || !curr_bloom_filter->contains(key)) {
@@ -972,22 +991,27 @@ string lsm_tree::range(int start, int end) {
     
     set<int> keys_found;
 
+    // GET LOCK ON BUFFER HERE, in a code snippet with separate scope to make sure the buffer's lock is not
+    // held when we search through each level's data
+    {
+        lock_guard<mutex> buffer_lock(buffer_ptr_->mutex_);
+        // do linear search on the buffer (since buffer isn't sorted)
+        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
+            auto curr_lsm_entry = buffer_ptr_->buffer_[i];
+            if (start <= curr_lsm_entry.key && curr_lsm_entry.key < end) {
+                if (curr_lsm_entry.value != DELETED_FLAG) {
+                    // cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
+                    ss << to_string(curr_lsm_entry.key) << ":" << to_string(curr_lsm_entry.value) << " ";
+                }
 
-    // do linear search on the buffer (since buffer isn't sorted)
-    for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
-        auto curr_lsm_entry = buffer_ptr_->buffer_[i];
-        if (start <= curr_lsm_entry.key && curr_lsm_entry.key < end) {
-            if (curr_lsm_entry.value != DELETED_FLAG) {
-                // cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
-                ss << to_string(curr_lsm_entry.key) << ":" << to_string(curr_lsm_entry.value) << " ";
+                keys_found.insert(curr_lsm_entry.key);
             }
-
-            keys_found.insert(curr_lsm_entry.key);
         }
     }
 
     for (int i = 1; i < MAX_LEVELS; ++i) {
         auto curr_level_ptr = levels_[i];
+        lock_guard<mutex> current_level_lock(curr_level_ptr->mutex_);
         auto curr_bloom_filter = levels_[i]->filter_;
         if (!curr_bloom_filter) {
             assert(curr_level_ptr->curr_size_ == 0);
@@ -1061,6 +1085,10 @@ void lsm_tree::delete_key(int key) {
     // first search through buffer, and if it exists, just update the key value struct directly to mark as deleted
     // --> since simply adding a new entry to the buffer for deletion might not cause the old entry to be deleted when merging later on since original comes before the new entry
     // do linear search on the buffer (since buffer isn't sorted)
+
+    // LOCKER BUFFER HERE
+    buffer_ptr_->mutex_.lock();
+
     for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
         if (buffer_ptr_->buffer_[i].key == key) {
             // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
@@ -1068,6 +1096,9 @@ void lsm_tree::delete_key(int key) {
             return;
         }
     }
+
+    // UNLOCK BUFFER HERE (SINCE WE WILL LOCK/UNLOCK AGAIN INSIDE INSERT() FUNCTION)
+    buffer_ptr_->mutex_.unlock();
 
 
     // if not found in buffer, then just insert a new key value struct with the deleted flag set as true
@@ -1081,6 +1112,12 @@ void lsm_tree::delete_key(int key) {
 //      stale keys to be deleted on a merge), the number of keys in each level of the tree, and a dump of the 
 //      entire tree that includes the key, value, and which level it is on 
 string lsm_tree::printStats() {
+
+    // acquire all necessary locks at beginning to ensure state of LSM tree does not change while we print
+    buffer_ptr_->mutex_.lock();
+    for (int i = 1; i < MAX_LEVELS; ++i) {
+        levels_[i]->mutex_.lock();
+    }
 
     // main logic behind this is to iterate from buffer to larger levels, and keep track of valid and deleted keys using sets to correctly count logical pairs, but
     // this can get out of hand real fast once our database has millions of keys that it has stored, so `TODO: come back to this later to scale better`
@@ -1187,6 +1224,12 @@ string lsm_tree::printStats() {
         // if (naive_sum != valid_keys.size()) {
         //     cout << "MISMATCH BETWEEN LEVEL " << i << "'s SIZE AND VALID KEYS SET" << endl;
         // }
+    }
+
+    // unlock all the locks we acquired at the beginning of this function
+    buffer_ptr_->mutex_.unlock();
+    for (int i = 1; i < MAX_LEVELS; ++i) {
+        levels_[i]->mutex_.unlock();
     }
 
     // cout << "NAIVE SUM OF ALL CURR_SIZE_ VARIABLES: " << naive_sum << endl;

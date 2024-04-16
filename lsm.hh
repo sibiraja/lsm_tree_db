@@ -16,6 +16,7 @@
 #include <cerrno>
 #include <cstring>
 #include <sstream>
+#include <mutex>
 
 #define INITIAL_LEVEL_CAPACITY      1024
 #define SIZE_RATIO                  2
@@ -55,6 +56,8 @@ public:
     int num_fence_ptrs_ = 0; // will store how many fence ptrs we will have by doing curr_size_ / FENCE_PTR_EVERY_K_ENTRIES
     bloom_filter* filter_ = nullptr; // explicitly set to nullptr so calling delete on this if it hasn't been set to an actual bloom filter object won't break our code (deleting nullptr is safe)
 
+    mutex mutex_;
+
     string disk_file_name_;
     uint64_t max_file_size;
 
@@ -78,6 +81,8 @@ public:
     level* level1ptr_;
     int capacity_ = BUFFER_CAPACITY;
     int curr_size_ = 0;
+
+    mutex mutex_;
 
     // note: can make this a separate data structure later, but tbh an unsorted array that sorts itself at the end is roughly the same performance as
     // a heap or BST. 
