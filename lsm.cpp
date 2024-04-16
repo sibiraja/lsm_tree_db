@@ -17,7 +17,7 @@ using namespace std;
 // level::level() constructor
 //      This constructor either starts a level from scratch or reuses any data that we have on disk for
 //      a level
-level::level(int capacity, int curr_level) {
+level::level(uint64_t capacity, int curr_level) {
     lock_guard<mutex> curr_level_lock(this->mutex_);
     capacity_ = capacity;
     curr_level_ = curr_level;
@@ -30,22 +30,30 @@ level::level(int capacity, int curr_level) {
     // max_file_size = 4096 * curr_level_;
     // max_file_size = ((this->capacity_ * sizeof(lsm_data) + 4095) / 4096) * 4096; // this is so each level's disk file is rounded to the nearest page in bytes (size-wise)
     uint64_t calculated_size = this->capacity_ * sizeof(lsm_data);
+    
     if (calculated_size / sizeof(lsm_data) != this->capacity_) {
         std::cerr << "Overflow detected when calculating base size!" << std::endl;
         cout << "calculated_size / sizeof(lsm_data) = " << calculated_size / sizeof(lsm_data) << "| this->capacity_: " << this->capacity_ << endl;
         exit(EXIT_FAILURE);
     }
-    uint64_t padded_size = calculated_size + 4095;
-    if (padded_size < calculated_size) {  // Check for overflow
-        std::cerr << "Overflow detected after adding padding!" << std::endl;
-        exit(EXIT_FAILURE);
+
+    if (calculated_size % 4096 != 0) {
+        cout << "We need to pad to round up to nearest pagesize!" << endl;
+        uint64_t padded_size = calculated_size + 4095;
+        if (padded_size < calculated_size) {  // Check for overflow
+            std::cerr << "Overflow detected after adding padding!" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        max_file_size = (padded_size / 4096) * 4096;
+        // if (max_file_size < padded_size) {  // Check for overflow
+        //     std::cerr << "Overflow detected after adjusting to block size!" << std::endl;
+        //     cout << "padded_size: " << padded_size << " | max_file_size: " << max_file_size << endl;
+        //     exit(EXIT_FAILURE);
+        // }
+    } else {
+        max_file_size = calculated_size;
+        cout << "Max file size for level " << curr_level_ << ": " << max_file_size << endl;
     }
-    max_file_size = (padded_size / 4096) * 4096;
-    // if (max_file_size < padded_size) {  // Check for overflow
-    //     std::cerr << "Overflow detected after adjusting to block size!" << std::endl;
-    //     cout << "padded_size: " << padded_size << " | max_file_size: " << max_file_size << endl;
-    //     exit(EXIT_FAILURE);
-    // }
 
 
     // in case we already have data for this level, udpate the curr_size count using the level metadata file and re-construct bloom filters and fence pointers
@@ -82,7 +90,7 @@ level::level(int capacity, int curr_level) {
         }
 
         /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
-        cout << "Going to write empty string to EOF" << endl;
+        // cout << "Going to write empty string to EOF" << endl;
         rflag = write(fd, "", 1);
         if(rflag == -1)
         {
@@ -91,7 +99,7 @@ level::level(int capacity, int curr_level) {
             exit(0);
         }
 
-        cout << "Going to mmap()" << endl;
+        // cout << "Going to mmap()" << endl;
         lsm_data* curr_level_data = (lsm_data*) mmap(0, max_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (curr_level_data == MAP_FAILED)
         {
@@ -114,21 +122,21 @@ level::level(int capacity, int curr_level) {
             printf("Unable to msync.\n");
             exit(0);
         }
-        cout << "Going to fsync()" << endl;
+        // cout << "Going to fsync()" << endl;
         // fsync the file descriptor to ensure data is written to disk
         if (fsync(fd) == -1) {
             perror("fsync error");
             exit(0);
             // Handle error
         }
-        cout << "Going to munmap()" << endl;
+        // cout << "Going to munmap()" << endl;
         rflag = munmap(curr_level_data, max_file_size);
         if(rflag == -1)
         {
             printf("Unable to munmap.\n");
             exit(0);
         }
-        cout << "Done setting up level " << curr_level_ << "!" << endl;
+        // cout << "Done setting up level " << curr_level_ << "!" << endl;
         close(fd);
     }
 
@@ -157,14 +165,14 @@ void level::fp_construct() {
     fp_array_ = new fence_ptr[num_fence_ptrs_];
 
     for (int i = 0; i < num_fence_ptrs_; i++) {
-        int segment_start_index = i * FENCE_PTR_EVERY_K_ENTRIES;
-        int segment_end_index = (i + 1) * FENCE_PTR_EVERY_K_ENTRIES - 1;
+        uint64_t segment_start_index = i * FENCE_PTR_EVERY_K_ENTRIES;
+        uint64_t segment_end_index = (i + 1) * FENCE_PTR_EVERY_K_ENTRIES - 1;
         // Adjust for the last segment which might not be full
         if (segment_end_index >= curr_size_) {
             segment_end_index = curr_size_ - 1;
         }
 
-        int segment_offset = segment_start_index * LSM_DATA_SIZE;
+        uint64_t segment_offset = segment_start_index * LSM_DATA_SIZE;
         fp_array_[i].min_key = data[segment_start_index].key;
         fp_array_[i].max_key = data[segment_end_index].key;
         fp_array_[i].offset = segment_offset;
@@ -235,14 +243,14 @@ void level::bf_fp_construct() {
 
     // Loop to construct fence pointers
     for (int i = 0; i < num_fence_ptrs_; i++) {
-        int segment_start_index = i * FENCE_PTR_EVERY_K_ENTRIES;
-        int segment_end_index = (i + 1) * FENCE_PTR_EVERY_K_ENTRIES - 1;
+        uint64_t segment_start_index = i * FENCE_PTR_EVERY_K_ENTRIES;
+        uint64_t segment_end_index = (i + 1) * FENCE_PTR_EVERY_K_ENTRIES - 1;
         // Adjust for the last segment which might not be full
         if (segment_end_index >= curr_size_) {
             segment_end_index = curr_size_ - 1;
         }
 
-        int segment_offset = segment_start_index * LSM_DATA_SIZE;
+        uint64_t segment_offset = segment_start_index * LSM_DATA_SIZE;
         fp_array_[i].min_key = data[segment_start_index].key;
         fp_array_[i].max_key = data[segment_end_index].key;
         fp_array_[i].offset = segment_offset;
@@ -250,7 +258,7 @@ void level::bf_fp_construct() {
 
 
     // Loop to insert all elements into bloom filter
-    for (int i = 0; i < curr_size_; ++i) {
+    for (uint64_t i = 0; i < curr_size_; ++i) {
         filter_->insert(data[i].key);
     }
 
@@ -265,7 +273,7 @@ void level::bf_fp_construct() {
 //      always Level #N-1 and Level #N). It takes in an optional parameter buffer_ptr, but this is only ever
 //      passed in when the buffer calls merge() and merges data with level1. Other levels never have to merge data
 //      directly from the buffer. Note that before the merge happens, we check if a cascade merge needs to happen first
-bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_ptr) {
+bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** buffer_ptr) {
     // cout << endl;
     // cout << endl;
     // cout << "====== INSIDE NEW MERGE! Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
@@ -429,10 +437,10 @@ bool level::merge(int num_elements_to_merge, int child_level, lsm_data** buffer_
     // cout << "Initialized bf and fp's" << endl;
 
     // merge 2 sorted arrays into 1 sorted array
-    int my_ptr = 0;
-    int child_ptr = 0;
+    uint64_t my_ptr = 0;
+    uint64_t child_ptr = 0;
 
-    int temp_sstable_ptr = 0;
+    uint64_t temp_sstable_ptr = 0;
 
     // cout << "About to merge 2 sorted arrays..." << endl;
 
@@ -829,6 +837,10 @@ lsm_tree::lsm_tree() {
     
     auto curr_level_ptr = levels_[1];
     for (int i = 2; i <= MAX_LEVELS; ++i) {
+        cout << endl;
+        cout << "LEVEL " << i - 1 << " has capacity: " << curr_level_ptr->capacity_ << endl;
+        cout << "SIZE RATIO: " << SIZE_RATIO << endl;
+        cout << "LEVEL " << i << " can store " << curr_level_ptr->capacity_ * SIZE_RATIO << " entries total" << endl;
         levels_[i] = new level(curr_level_ptr->capacity_ * SIZE_RATIO, i);
         curr_level_ptr->next_ = levels_[i];
         curr_level_ptr = levels_[i];
@@ -1178,7 +1190,7 @@ string lsm_tree::printStats() {
         }
 
         string curr_level_contents = "";
-        for (int j = 0; j < levels_[i]->curr_size_; ++j) {
+        for (uint64_t j = 0; j < levels_[i]->curr_size_; ++j) {
             string temp = to_string(new_curr_sstable[j].key) + ":" + to_string(new_curr_sstable[j].value) + ":L" + to_string(i) + " ";
             curr_level_contents += temp;
             // cout << new_curr_sstable[j].key << ":" << new_curr_sstable[j].value << ":L" << i << endl;

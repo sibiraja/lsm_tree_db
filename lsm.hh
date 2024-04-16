@@ -19,7 +19,7 @@
 #include <mutex>
 
 #define INITIAL_LEVEL_CAPACITY      1024
-#define SIZE_RATIO                  2
+#define SIZE_RATIO                  6
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             50
 #define MAX_LEVELS                  10
@@ -47,8 +47,8 @@ struct fence_ptr {
 
 class level {
 public:
-    int capacity_;
-    int curr_size_ = 0;
+    uint64_t capacity_;
+    uint64_t curr_size_ = 0;
     int curr_level_;
     level* prev_ = nullptr;
     level* next_ = nullptr;
@@ -61,7 +61,7 @@ public:
     string disk_file_name_;
     uint64_t max_file_size;
 
-    level(int capacity, int curr_level);
+    level(uint64_t capacity, int curr_level);
 
     // This function should re-construct fence pointers for a given level whenever we have new data at this level 
     void fp_construct();
@@ -71,7 +71,7 @@ public:
     void bf_fp_construct();
 
     // only called on level1 since other levels never have to merge data directly from the buffer
-    bool merge(int num_elements_to_merge, int child_level, lsm_data** buffer_ptr = nullptr);
+    bool merge(uint64_t num_elements_to_merge, int child_level, lsm_data** buffer_ptr = nullptr);
 };
 
 
