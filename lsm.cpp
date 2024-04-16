@@ -1093,6 +1093,7 @@ void lsm_tree::delete_key(int key) {
         if (buffer_ptr_->buffer_[i].key == key) {
             // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
             buffer_ptr_->buffer_[i].value = DELETED_FLAG;
+            buffer_ptr_->mutex_.unlock();
             return;
         }
     }
