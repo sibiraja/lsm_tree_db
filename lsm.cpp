@@ -60,7 +60,7 @@ level::level(uint64_t capacity, int curr_level) {
     struct stat file_exists;
     if (stat (disk_file_name_.c_str(), &file_exists) == 0) {
         curr_size_ = metadata_file_ptr[curr_level_];
-        // cout << "On database startup, level " << curr_level_ << " already has " << curr_size_ << " data entries!" << endl;
+        cout << "On database startup, level " << curr_level_ << " already has " << curr_size_ << " data entries but has max_file_size: " << max_file_size << endl;
 
         // calculate number of fence pointers we need
         num_fence_ptrs_ = curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;

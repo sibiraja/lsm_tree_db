@@ -19,7 +19,7 @@
 #include <mutex>
 
 #define INITIAL_LEVEL_CAPACITY      1024
-#define SIZE_RATIO                  6
+#define SIZE_RATIO                  8
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             50
 #define MAX_LEVELS                  10
