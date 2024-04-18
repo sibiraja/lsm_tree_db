@@ -15,7 +15,9 @@ Log-structured merge-tree
 - To test client-server functionality, run `telnet localhost 8081` in a separate terminal to connect to database server as a client
 
 ## Notes:
-- Need to design a synchronization plan
+- Profiling cache statistics: `valgrind --tool=cachegrind ./database` and `cg_annotate cachegrind.out.[PID HERE]`
+- iostat: `iostat -dx 2` to report on read/write IOs. Can report averages or minimum/maximum across the metrics for each time interval. Perhaps maximum IOs would be more insightful to see how expensive performance can be.
+- figure out how to measure overall throughput
 
 
 ### Name ideas:
