@@ -2,7 +2,7 @@
 CC=g++
 
 # Compiler flags
-CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread
+CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread -fstack-protector-strong -fsanitize=address
 
 # Target executable names
 TARGET1=database

@@ -33,9 +33,7 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
             int value;
             file.read(reinterpret_cast<char*>(&key), sizeof(key));
             file.read(reinterpret_cast<char*>(&value), sizeof(value));
-            // cout << "File: " << newfileName << " wants to insert (" << key << ", " << value << ")" << endl;
             lsm_tree_obj->insert({key, value});
-            // put(key, value);
         }
         file.close();
     } else {
@@ -43,64 +41,40 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
     }
 }
 
-
-void handle_client_connection(int client_socket_fd, lsm_tree* db) {
-    char buffer[256];
-
-    while (true) {    
-        memset(buffer, 0, 256);
-        int n = read(client_socket_fd, buffer, 255);
-
-        if (n < 0) {
-            cerr << "ERROR reading from socket" << endl;
-            break;
-        }
-        if (n == 0) {  // client closed connection
-            cout << "Client disconnected." << endl;
-            break;
-        }
-
-        string input(buffer);
-        istringstream iss(input);
+void processCommands(istream& in, lsm_tree* db) {
+    string line;
+    while (getline(in, line)) {
+        istringstream iss(line);
         char command;
         int key, value, startKey, endKey, level;
-        string fileName;
-        string return_string = "";
+        string fileName, return_string;
         iss >> command;
         switch (command) {
             case 'p':
                 iss >> key >> value;
                 db->insert({key, value});
-                // cout << "Inserted (" << key << ", " << value << ")" << endl; 
-                // put(key, value);
                 break;
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
-                // cout << return_string;
-                // get(key);
+                cout << return_string;
                 break;
             case 'd':
                 iss >> key;
                 db->delete_key(key);
-                // del(key);
                 break;
-            case 'r': {
+            case 'r':
                 iss >> startKey >> endKey;
                 return_string = db->range(startKey, endKey);
-                // cout << return_string;
-                // range(startKey, endKey);
+                cout << return_string;
                 break;
-            }
-            case 'l': {
+            case 'l':
                 iss >> fileName;
                 load(fileName, db);
                 break;
-            }
             case 's':
-                // TODO: need to implement printStats() function in `lsm.hh` once bloom filters and fence pointers are integrated
                 return_string = db->printStats();
-                // cout << return_string;
+                cout << return_string;
                 break;
             case 'f':
                 db->flush_buffer();
@@ -109,27 +83,46 @@ void handle_client_connection(int client_socket_fd, lsm_tree* db) {
                 iss >> level;
                 db->merge_level(level);
                 break;
+            case 'w':
+            {
+                iss >> fileName;
+                ifstream file(fileName);
+                if (file) {
+                    processCommands(file, db);
+                    file.close();
+                } else {
+                    cout << "File `" << fileName << "` not found!" << endl;
+                }
+                break;
+            }
             case 'e':
                 db->flush_buffer();
                 db->cleanup();
                 delete db;
-                write(client_socket_fd, "Exited!\n", 8);
-                close(client_socket_fd);
                 exit(0);
             default:
-                // cout << "Unknown command: " << command << endl;
-                return_string = "Unknown command: " + to_string(command) + "\n";
-        }
-
-        n = write(client_socket_fd, return_string.c_str(), return_string.length());
-        if (n < 0) {
-            cerr << "ERROR writing to socket" << endl;
-            break;
+                cout << "Unknown command: " << command << endl;
         }
     }
+}
 
+void handle_client_connection(int client_socket_fd, lsm_tree* db) {
+    char buffer[256];
+    while (true) {
+        memset(buffer, 0, 256);
+        int n = read(client_socket_fd, buffer, 255);
+        if (n <= 0) {
+            cerr << "ERROR reading from socket or client disconnected" << endl;
+            break;
+        }
+
+        string input(buffer);
+        stringstream ss(input);
+        processCommands(ss, db);
+    }
     close(client_socket_fd);
 }
+
 
 
 int main() {

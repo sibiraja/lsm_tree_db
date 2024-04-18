@@ -17,9 +17,7 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
             int value;
             file.read(reinterpret_cast<char*>(&key), sizeof(key));
             file.read(reinterpret_cast<char*>(&value), sizeof(value));
-            // cout << "File: " << newfileName << " wants to insert (" << key << ", " << value << ")" << endl;
             lsm_tree_obj->insert({key, value});
-            // put(key, value);
         }
         file.close();
     } else {
@@ -27,15 +25,9 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
     }
 }
 
-int main() {
-    cout << endl;
-    cout << endl;
-    cout << "=====NEW RUN=====" << endl;
-    cout << endl;
-    lsm_tree* db = new lsm_tree();
-    
+void processCommands(istream& in, lsm_tree* db) {
     string line;
-    while (getline(cin, line)) {
+    while (getline(in, line)) {
         istringstream iss(line);
         char command;
         int key, value, startKey, endKey, level;
@@ -45,34 +37,26 @@ int main() {
             case 'p':
                 iss >> key >> value;
                 db->insert({key, value});
-                // cout << "Inserted (" << key << ", " << value << ")" << endl; 
-                // put(key, value);
                 break;
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
                 cout << return_string;
-                // get(key);
                 break;
             case 'd':
                 iss >> key;
                 db->delete_key(key);
-                // del(key);
                 break;
-            case 'r': {
+            case 'r':
                 iss >> startKey >> endKey;
                 return_string = db->range(startKey, endKey);
                 cout << return_string;
-                // range(startKey, endKey);
                 break;
-            }
-            case 'l': {
+            case 'l':
                 iss >> fileName;
                 load(fileName, db);
                 break;
-            }
             case 's':
-                // TODO: need to implement printStats() function in `lsm.hh` once bloom filters and fence pointers are integrated
                 return_string = db->printStats();
                 cout << return_string;
                 break;
@@ -83,14 +67,35 @@ int main() {
                 iss >> level;
                 db->merge_level(level);
                 break;
+            case 'w':
+            {
+                iss >> fileName;
+                ifstream file(fileName);
+                if (file) {
+                    processCommands(file, db);
+                    file.close();
+                } else {
+                    cout << "File `" << fileName << "` not found!" << endl;
+                }
+                break;
+            }
             case 'e':
                 db->flush_buffer();
                 db->cleanup();
                 delete db;
-                return 0;
+                exit(0);
             default:
                 cout << "Unknown command: " << command << endl;
         }
     }
+}
+
+int main() {
+    cout << endl << endl;
+    cout << "=====NEW RUN=====" << endl << endl;
+    lsm_tree* db = new lsm_tree();
+
+    processCommands(cin, db);  // Process commands from standard input
+
     return 0;
 }

@@ -1096,7 +1096,7 @@ string lsm_tree::range(int start, int end) {
                     exit(0);
                 }
 
-                lsm_data segment_buffer[341];
+                lsm_data segment_buffer[FENCE_PTR_EVERY_K_ENTRIES];
 
                 // Determine the number of entries to read for this segment
                 int entriesToRead = FENCE_PTR_EVERY_K_ENTRIES;
