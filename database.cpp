@@ -38,7 +38,7 @@ int main() {
     while (getline(cin, line)) {
         istringstream iss(line);
         char command;
-        int key, value, startKey, endKey;
+        int key, value, startKey, endKey, level;
         string fileName, return_string;
         iss >> command;
         switch (command) {
@@ -78,6 +78,10 @@ int main() {
                 break;
             case 'f':
                 db->flush_buffer();
+                break;
+            case 'm':
+                iss >> level;
+                db->merge_level(level);
                 break;
             case 'e':
                 db->flush_buffer();

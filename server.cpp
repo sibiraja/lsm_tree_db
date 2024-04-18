@@ -63,7 +63,7 @@ void handle_client_connection(int client_socket_fd, lsm_tree* db) {
         string input(buffer);
         istringstream iss(input);
         char command;
-        int key, value, startKey, endKey;
+        int key, value, startKey, endKey, level;
         string fileName;
         string return_string = "";
         iss >> command;
@@ -104,6 +104,10 @@ void handle_client_connection(int client_socket_fd, lsm_tree* db) {
                 break;
             case 'f':
                 db->flush_buffer();
+                break;
+            case 'm':
+                iss >> level;
+                db->merge_level(level);
                 break;
             case 'e':
                 db->flush_buffer();

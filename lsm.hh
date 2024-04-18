@@ -107,6 +107,8 @@ public:
 
     void flush_buffer();
 
+    void merge_level(int i);
+
     string get(int key);
 
     string range(int start, int end);

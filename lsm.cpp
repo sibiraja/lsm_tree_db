@@ -306,7 +306,7 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
             exit(0);
         }
 
-        // memset(curr_file_ptr, 0, max_file_size);
+        // memset(curr_file_ptr, 0, max_file_size); --> recall that we don't need to do this as long as we correctly maintain the curr_size value
         int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
         if(rflag == -1) {
             printf("Unable to msync.\n");
@@ -587,6 +587,9 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
 
     // write curr_size to metadata file
     metadata_file_ptr[curr_level_] = curr_size_;
+    if (curr_level_ > 1) {
+        metadata_file_ptr[curr_level_ - 1] = 0;
+    }
     rflag = msync(metadata_file_ptr, (MAX_LEVELS * sizeof(int)), MS_SYNC);
     if(rflag == -1)
     {
@@ -862,6 +865,58 @@ bool lsm_tree::insert(lsm_data kv_pair) {
 //      so all data is on disk and nothing will be wiped when the program exits
 void lsm_tree::flush_buffer() {
     buffer_ptr_->flush();
+}
+
+// lsm_tree::merge_level()
+//      This function forcefully merges the data in level i with the data in level i + 1. No changes occur if
+//      the input i is outside the range of levels 1 to MAX_LEVELS - 1 because the largest level has no level to
+//      merge its data with
+void lsm_tree::merge_level(int i) {
+    if (i < 1 || i >= MAX_LEVELS) {
+        return;
+    }
+    
+    auto curr_level_ptr = levels_[i];
+    lock_guard<mutex> buffer_lock(curr_level_ptr->mutex_);
+    levels_[i+1]->merge(curr_level_ptr->curr_size_, i);
+
+    // reset data for this level as it has been merged with another level already
+    curr_level_ptr->curr_size_ = 0;
+    // cout << "Bc we cascade merged, Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
+
+    int curr_fd = open(curr_level_ptr->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+    if (curr_fd == -1) {
+        cout << "Error in opening / creating " << curr_level_ptr->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        exit(0);
+    }
+    
+    lsm_data* curr_file_ptr = (lsm_data*) mmap(0,curr_level_ptr->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+    if (curr_file_ptr == MAP_FAILED)
+    {
+        cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        close(curr_fd);
+        exit(0);
+    }
+
+    // memset(curr_file_ptr, 0, max_file_size); // --> recall that we don't need to do this as long as we correctly maintain the curr_size value
+    int rflag = msync(curr_file_ptr, curr_level_ptr->max_file_size, MS_SYNC);
+    if(rflag == -1) {
+        printf("Unable to msync.\n");
+        exit(0);
+    }
+
+    // fsync the file descriptor to ensure data is written to disk
+    if (fsync(curr_fd) == -1) {
+        perror("fsync error");
+        exit(0);
+        // Handle error
+    }
+    rflag = munmap(curr_file_ptr, curr_level_ptr->max_file_size);
+    if(rflag == -1)
+    {
+        printf("Unable to munmap.\n");
+    }
+    close(curr_fd);
 }
 
     
