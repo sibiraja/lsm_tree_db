@@ -1,7 +1,7 @@
 #include "lsm.hh"
 
 // Global metadata variables
-const char* metadata_filename = "level_metadata.data";
+const char* metadata_filename = "data/level_metadata.data";
 const size_t metadata_size = MAX_LEVELS * sizeof(int); // fixed size for metadata since each level will have an int representing it's `curr_size`
 int* metadata_file_ptr;
 int metadata_file_descriptor;
@@ -26,7 +26,7 @@ level::level(uint64_t capacity, int curr_level) {
 
 
     // NEW DISK STORAGE IMPLEMENTATION CODE
-    disk_file_name_ = "LEVEL" + to_string(curr_level_) + ".data";
+    disk_file_name_ = "data/LEVEL" + to_string(curr_level_) + ".data";
     // max_file_size = 4096 * curr_level_;
     // max_file_size = ((this->capacity_ * sizeof(lsm_data) + 4095) / 4096) * 4096; // this is so each level's disk file is rounded to the nearest page in bytes (size-wise)
     uint64_t calculated_size = this->capacity_ * sizeof(lsm_data);
@@ -385,7 +385,7 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
 
 
     // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
-    int temp_fd = open("TEMP.data", O_RDWR | O_CREAT, (mode_t)0600);
+    int temp_fd = open("data/TEMP.data", O_RDWR | O_CREAT, (mode_t)0600);
     if (temp_fd == -1) {
         cout << "Error in opening / creating TEMP.data file! Error message: " << strerror(errno) << " | Exiting program" << endl;
         exit(0);
@@ -657,7 +657,7 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
         exit(0);
     }
 
-    if (rename("TEMP.data", disk_file_name_.c_str()) == 0) {
+    if (rename("data/TEMP.data", disk_file_name_.c_str()) == 0) {
         // cout << "Successfully renamed temp file to " << disk_file_name_ << endl;
     } else {
         cout << "Error in renaming temp file" << " , Error message: " << strerror(errno) << " | Exiting program" << endl;
