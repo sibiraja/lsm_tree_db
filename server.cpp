@@ -113,7 +113,7 @@ void handle_client_connection(int client_socket_fd, lsm_tree* db) {
                 db->flush_buffer();
                 db->cleanup();
                 delete db;
-                write(client_socket_fd, "Exited!\n", 30);
+                write(client_socket_fd, "Exited!\n", 8);
                 close(client_socket_fd);
                 exit(0);
             default:
