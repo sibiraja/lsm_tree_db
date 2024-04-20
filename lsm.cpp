@@ -52,7 +52,7 @@ level::level(uint64_t capacity, int curr_level) {
         // }
     } else {
         max_file_size = calculated_size;
-        cout << "Max file size for level " << curr_level_ << ": " << max_file_size << endl;
+        // cout << "Max file size for level " << curr_level_ << ": " << max_file_size << endl;
     }
 
 
@@ -60,7 +60,7 @@ level::level(uint64_t capacity, int curr_level) {
     struct stat file_exists;
     if (stat (disk_file_name_.c_str(), &file_exists) == 0) {
         curr_size_ = metadata_file_ptr[curr_level_];
-        cout << "On database startup, level " << curr_level_ << " already has " << curr_size_ << " data entries but has max_file_size: " << max_file_size << endl;
+        // cout << "On database startup, level " << curr_level_ << " already has " << curr_size_ << " data entries but has max_file_size: " << max_file_size << endl;
 
         // calculate number of fence pointers we need
         num_fence_ptrs_ = curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
@@ -79,7 +79,7 @@ level::level(uint64_t capacity, int curr_level) {
         }
 
         /* Moving the file pointer to the end of the file*/
-        cout << "Attempting lseek on level " << this->curr_level_ << " with size " << max_file_size << endl;
+        // cout << "Attempting lseek on level " << this->curr_level_ << " with size " << max_file_size << endl;
         int rflag = lseek(fd, max_file_size-1, SEEK_SET);
         
         if(rflag == -1)
@@ -840,10 +840,10 @@ lsm_tree::lsm_tree() {
     
     auto curr_level_ptr = levels_[1];
     for (int i = 2; i <= MAX_LEVELS; ++i) {
-        cout << endl;
-        cout << "LEVEL " << i - 1 << " has capacity: " << curr_level_ptr->capacity_ << endl;
-        cout << "SIZE RATIO: " << SIZE_RATIO << endl;
-        cout << "LEVEL " << i << " can store " << curr_level_ptr->capacity_ * SIZE_RATIO << " entries total" << endl;
+        // cout << endl;
+        // cout << "LEVEL " << i - 1 << " has capacity: " << curr_level_ptr->capacity_ << endl;
+        // cout << "SIZE RATIO: " << SIZE_RATIO << endl;
+        // cout << "LEVEL " << i << " can store " << curr_level_ptr->capacity_ * SIZE_RATIO << " entries total" << endl;
         levels_[i] = new level(curr_level_ptr->capacity_ * SIZE_RATIO, i);
         curr_level_ptr->next_ = levels_[i];
         curr_level_ptr = levels_[i];

@@ -7,6 +7,8 @@
 
 using namespace std;
 
+uint64_t lines_processed;
+
 void load(string& fileName, lsm_tree* lsm_tree_obj) {
     ifstream file;
     string newfileName = "generator/" + fileName;
@@ -86,6 +88,11 @@ void processCommands(istream& in, lsm_tree* db) {
                 exit(0);
             default:
                 cout << "Unknown command: " << command << endl;
+        }
+
+        ++lines_processed;
+        if (lines_processed % 10000 == 0) {
+            cout << "Lines processed: " << lines_processed << endl;
         }
     }
 }

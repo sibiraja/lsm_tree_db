@@ -1,2 +1,5 @@
 .vscode/*
 *.data
+cachegrind.out*
+*_put.txt
+*_get.txt
