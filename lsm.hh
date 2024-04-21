@@ -17,6 +17,9 @@
 #include <cstring>
 #include <sstream>
 #include <mutex>
+#include <thread>
+#include <map>
+#include <vector>
 
 #define INITIAL_LEVEL_CAPACITY      1024
 #define SIZE_RATIO                  5
@@ -26,6 +29,7 @@
 #define FENCE_PTR_EVERY_K_ENTRIES   512 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               8
 #define DELETED_FLAG                INT_MIN
+#define PARALLEL_RANGE              true
 
 
 using namespace std;

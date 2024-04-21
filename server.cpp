@@ -3,7 +3,6 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include <thread>
 
 #include "lsm.hh"
 
@@ -210,8 +209,11 @@ int main() {
     }
 
     close(sockfd);
-    db->flush_buffer();
-    db->cleanup();
-    delete db;
+    // if db hasn't already been cleaned up yet
+    if (db) {
+        db->flush_buffer();
+        db->cleanup();
+        delete db;
+    }
     return 0;
 }
