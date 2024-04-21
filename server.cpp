@@ -210,6 +210,8 @@ int main() {
     }
 
     close(sockfd);
+    db->flush_buffer();
+    db->cleanup();
     delete db;
     return 0;
 }

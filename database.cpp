@@ -103,6 +103,8 @@ int main() {
     lsm_tree* db = new lsm_tree();
 
     processCommands(cin, db);  // Process commands from standard input
-
+    db->flush_buffer();
+    db->cleanup();
+    delete db;
     return 0;
 }
