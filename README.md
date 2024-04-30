@@ -15,6 +15,9 @@ Log-structured merge-tree
 - To test client-server functionality, run `telnet localhost 8081` in a separate terminal to connect to database server as a client
 
 ## Notes:
+- **profile using iostat and cachegrind for now**
+- if i can use perf on FAS Cluster: `salloc --exclusive --nodes=1 --cpus-per-task=8 --mem=32G -p test -t 0-00:10` --> this gets exclusive access to a node
+    - need to verify if perf is possible on cluster though
 - Profiling cache statistics: `valgrind --tool=cachegrind ./database` and `cg_annotate cachegrind.out.[PID HERE]`
 - iostat: `iostat -dx 2` to report on read/write IOs. Can report averages or minimum/maximum across the metrics for each time interval. Perhaps maximum IOs would be more insightful to see how expensive performance can be.
 - figure out how to measure overall throughput
