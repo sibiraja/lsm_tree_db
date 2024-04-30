@@ -39,6 +39,6 @@ $(TARGET2): $(OBJECTS2)
 # 	$(CC) $(CFLAGS) -o $(TARGET3) $(OBJECTS3)
 
 clean:
-	rm -f $(TARGET1) $(OBJECTS1) $(TARGET2) $(OBJECTS2) data/*
+	rm -f $(TARGET1) $(OBJECTS1) $(TARGET2) $(OBJECTS2) data/*.data
 
 .PHONY: all clean

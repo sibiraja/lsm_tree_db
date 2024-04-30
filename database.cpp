@@ -43,7 +43,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
-                cout << return_string;
+                // cout << return_string;
                 break;
             case 'd':
                 iss >> key;
@@ -52,7 +52,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'r':
                 iss >> startKey >> endKey;
                 return_string = db->range(startKey, endKey);
-                cout << return_string;
+                // cout << return_string;
                 break;
             case 'l':
                 iss >> fileName;
@@ -60,7 +60,7 @@ void processCommands(istream& in, lsm_tree* db) {
                 break;
             case 's':
                 return_string = db->printStats();
-                cout << return_string;
+                // cout << return_string;
                 break;
             case 'f':
                 db->flush_buffer();
