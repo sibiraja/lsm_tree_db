@@ -2,7 +2,7 @@
 Log-structured merge-tree
 
 ##
-- Docker for debugging with GDB: `docker build -t lsm_tree`, and `docker run --privileged -it --rm -v /Users/sibiraja/Desktop/lsm_tree_db:/usr/src/lsm_tree lsm_tree`
+- Docker for debugging with GDB: `docker build -t lsm_tree .`, and `docker run --privileged -it --rm -v /Users/sibiraja/Desktop/lsm_tree_db:/usr/src/lsm_tree lsm_tree`
     - Note that Docker containers can mask undefined behavior that I get when running locally on my MacOS, so make sure to run locally first and debug with GDB instead of
     debugging anything with Docker
 

@@ -1,3 +1,6 @@
+# To generate corresponding gets: awk '{print "g", $2}' skewed_[NUM]_put.txt > skewed_[NUM]_get.txt, make sure to delete the last
+# line of each get bc we end with a blank g bc of the final flush and exit we do in the put workloads
+
 import random
 
 def load_data(filename):

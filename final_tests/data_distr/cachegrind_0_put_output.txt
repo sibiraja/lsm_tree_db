@@ -1,0 +1,128 @@
+==520== Cachegrind, a cache and branch-prediction profiler
+==520== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==520== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==520== Command: ./database
+==520== 
+--520-- warning: L3 cache found, using its data for the LL simulation.
+--520-- warning: specified LL cache: line_size 64  assoc 16  total_size 12,582,912
+--520-- warning: simulated LL cache: line_size 64  assoc 24  total_size 12,582,912
+
+
+=====NEW RUN=====
+
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+Lines processed: 110000
+Lines processed: 120000
+Lines processed: 130000
+Lines processed: 140000
+Lines processed: 150000
+Lines processed: 160000
+Lines processed: 170000
+Lines processed: 180000
+Lines processed: 190000
+Lines processed: 200000
+Lines processed: 210000
+Lines processed: 220000
+Lines processed: 230000
+Lines processed: 240000
+Lines processed: 250000
+Lines processed: 260000
+Lines processed: 270000
+Lines processed: 280000
+Lines processed: 290000
+Lines processed: 300000
+Lines processed: 310000
+Lines processed: 320000
+Lines processed: 330000
+Lines processed: 340000
+Lines processed: 350000
+Lines processed: 360000
+Lines processed: 370000
+Lines processed: 380000
+Lines processed: 390000
+Lines processed: 400000
+Lines processed: 410000
+Lines processed: 420000
+Lines processed: 430000
+Lines processed: 440000
+Lines processed: 450000
+Lines processed: 460000
+Lines processed: 470000
+Lines processed: 480000
+Lines processed: 490000
+Lines processed: 500000
+Lines processed: 510000
+Lines processed: 520000
+Lines processed: 530000
+Lines processed: 540000
+Lines processed: 550000
+Lines processed: 560000
+Lines processed: 570000
+Lines processed: 580000
+Lines processed: 590000
+Lines processed: 600000
+Lines processed: 610000
+Lines processed: 620000
+Lines processed: 630000
+Lines processed: 640000
+Lines processed: 650000
+Lines processed: 660000
+Lines processed: 670000
+Lines processed: 680000
+Lines processed: 690000
+Lines processed: 700000
+Lines processed: 710000
+Lines processed: 720000
+Lines processed: 730000
+Lines processed: 740000
+Lines processed: 750000
+Lines processed: 760000
+Lines processed: 770000
+Lines processed: 780000
+Lines processed: 790000
+Lines processed: 800000
+Lines processed: 810000
+Lines processed: 820000
+Lines processed: 830000
+Lines processed: 840000
+Lines processed: 850000
+Lines processed: 860000
+Lines processed: 870000
+Lines processed: 880000
+Lines processed: 890000
+Lines processed: 900000
+Lines processed: 910000
+Lines processed: 920000
+Lines processed: 930000
+Lines processed: 940000
+Lines processed: 950000
+Lines processed: 960000
+Lines processed: 970000
+Lines processed: 980000
+Lines processed: 990000
+Lines processed: 1000000
+==520== 
+==520== I   refs:      61,673,246,620
+==520== I1  misses:        16,476,312
+==520== LLi misses:             3,138
+==520== I1  miss rate:           0.03%
+==520== LLi miss rate:           0.00%
+==520== 
+==520== D   refs:      35,659,186,647  (24,413,494,634 rd   + 11,245,692,013 wr)
+==520== D1  misses:        83,201,672  (    80,539,511 rd   +      2,662,161 wr)
+==520== LLd misses:           420,974  (       110,030 rd   +        310,944 wr)
+==520== D1  miss rate:            0.2% (           0.3%     +            0.0%  )
+==520== LLd miss rate:            0.0% (           0.0%     +            0.0%  )
+==520== 
+==520== LL refs:           99,677,984  (    97,015,823 rd   +      2,662,161 wr)
+==520== LL misses:            424,112  (       113,168 rd   +        310,944 wr)
+==520== LL miss rate:             0.0% (           0.0%     +            0.0%  )

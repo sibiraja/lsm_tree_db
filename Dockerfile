@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     make \
     linux-tools-common \
     linux-tools-generic \
+    sysstat \
     && apt-get install -y linux-tools-`uname -r` || true \
     && rm -rf /var/lib/apt/lists/*
 
