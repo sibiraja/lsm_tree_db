@@ -21,10 +21,10 @@
 #include <map>
 #include <vector>
 
-#define INITIAL_LEVEL_CAPACITY      1024
-#define SIZE_RATIO                  5
+#define INITIAL_LEVEL_CAPACITY      1024000
+#define SIZE_RATIO                  3
 // #define BUFFER_CAPACITY             5
-#define BUFFER_CAPACITY             50
+#define BUFFER_CAPACITY             10240
 #define MAX_LEVELS                  10
 #define FENCE_PTR_EVERY_K_ENTRIES   512 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               8
