@@ -104,7 +104,7 @@ level::level(uint64_t capacity, int curr_level) {
         if (curr_level_data == MAP_FAILED)
         {
             close(fd);
-            printf("Mmap failed.\n");
+            cout << "Mmap failed on level " << this->curr_level_ << " 's disk file" << endl; 
             exit(0);
         }
         
@@ -156,7 +156,7 @@ void level::fp_construct() {
     lsm_data* data = (lsm_data*) mmap(NULL, max_file_size, PROT_READ, MAP_SHARED, fd, 0);
     if (data == MAP_FAILED) {
         close(fd);
-        cout << "mmap failed" << endl;
+        cout << "Mmap failed on level " << this->curr_level_ << " 's fp_construct()" << endl; 
         return;
     }
 
@@ -233,7 +233,7 @@ void level::bf_fp_construct() {
     lsm_data* data = (lsm_data*) mmap(NULL, max_file_size, PROT_READ, MAP_SHARED, fd, 0);
     if (data == MAP_FAILED) {
         close(fd);
-        cout << "mmap failed" << endl;
+        cout << "Mmap failed on level " << this->curr_level_ << " 's bf_fp_construct()" << endl; 
         return;
     }
 

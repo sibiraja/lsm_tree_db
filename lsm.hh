@@ -25,8 +25,8 @@
 #define SIZE_RATIO                  3
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             10240
-#define MAX_LEVELS                  10
-#define FENCE_PTR_EVERY_K_ENTRIES   512 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
+#define MAX_LEVELS                  9
+#define FENCE_PTR_EVERY_K_ENTRIES   1024 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               8
 #define DELETED_FLAG                INT_MIN
 #define PARALLEL_RANGE              true
