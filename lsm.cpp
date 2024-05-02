@@ -452,6 +452,7 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
     if ((this->curr_size_ + num_elements_to_merge) % FENCE_PTR_EVERY_K_ENTRIES != 0) {
         ++this->num_fence_ptrs_;
     }
+    assert(num_fence_ptrs_ > 0);
     fp_array_ = new fence_ptr[num_fence_ptrs_];
 
     while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
@@ -618,7 +619,9 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
     }
 
     // update the max key for the current fence ptr we are on after merging has finished using the last element that was stored on disk
-    fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES)].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+    if (temp_sstable_ptr > 0) {
+        fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+    }
 
     // cout << "Finished third merging loop" << endl;
 
@@ -961,39 +964,41 @@ void lsm_tree::merge_level(int i) {
     curr_level_ptr->curr_size_ = 0;
     // cout << "Bc we cascade merged, Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
 
-    int curr_fd = open(curr_level_ptr->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-    if (curr_fd == -1) {
-        cout << "Error in opening / creating " << curr_level_ptr->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
-        exit(0);
-    }
-    
-    lsm_data* curr_file_ptr = (lsm_data*) mmap(0,curr_level_ptr->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
-    if (curr_file_ptr == MAP_FAILED)
-    {
-        cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
-        close(curr_fd);
-        exit(0);
-    }
+    // No need for the code below since all we need to do is set curr_size_ = 0, we no longer memset() and such
 
-    // memset(curr_file_ptr, 0, max_file_size); // --> recall that we don't need to do this as long as we correctly maintain the curr_size value
-    int rflag = msync(curr_file_ptr, curr_level_ptr->max_file_size, MS_SYNC);
-    if(rflag == -1) {
-        printf("Unable to msync.\n");
-        exit(0);
-    }
-
-    // fsync the file descriptor to ensure data is written to disk
-    // if (fsync(curr_fd) == -1) {
-    //     perror("fsync error");
+    // int curr_fd = open(curr_level_ptr->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+    // if (curr_fd == -1) {
+    //     cout << "Error in opening / creating " << curr_level_ptr->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
     //     exit(0);
-    //     // Handle error
     // }
-    rflag = munmap(curr_file_ptr, curr_level_ptr->max_file_size);
-    if(rflag == -1)
-    {
-        printf("Unable to munmap.\n");
-    }
-    close(curr_fd);
+    
+    // lsm_data* curr_file_ptr = (lsm_data*) mmap(0,curr_level_ptr->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+    // if (curr_file_ptr == MAP_FAILED)
+    // {
+    //     cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+    //     close(curr_fd);
+    //     exit(0);
+    // }
+
+    // // memset(curr_file_ptr, 0, max_file_size); // --> recall that we don't need to do this as long as we correctly maintain the curr_size value
+    // int rflag = msync(curr_file_ptr, curr_level_ptr->max_file_size, MS_SYNC);
+    // if(rflag == -1) {
+    //     printf("Unable to msync.\n");
+    //     exit(0);
+    // }
+
+    // // fsync the file descriptor to ensure data is written to disk
+    // // if (fsync(curr_fd) == -1) {
+    // //     perror("fsync error");
+    // //     exit(0);
+    // //     // Handle error
+    // // }
+    // rflag = munmap(curr_file_ptr, curr_level_ptr->max_file_size);
+    // if(rflag == -1)
+    // {
+    //     printf("Unable to munmap.\n");
+    // }
+    // close(curr_fd);
 }
 
     

@@ -1,8 +1,17 @@
 # Define compiler
 CC=g++
 
-# Compiler flags
-CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread -fstack-protector-strong
+# Original Compiler flags
+# CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread -fstack-protector-strong
+
+# High performance flags
+CFLAGS=-std=c++11 -O3 -march=native -flto -Wall -Wextra -pedantic -Wno-missing-field-initializers -pthread -fstack-protector-strong
+
+# New Debugging flags
+# CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread -fstack-protector-strong -fsanitize=address
+
+# Linker flags
+LDFLAGS=-flto
 
 # Target executable names
 TARGET1=database
@@ -30,10 +39,10 @@ all: $(TARGET1) $(TARGET2)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET1): $(OBJECTS1)
-	$(CC) $(CFLAGS) -o $(TARGET1) $(OBJECTS1)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $(TARGET1) $(OBJECTS1)
 
 $(TARGET2): $(OBJECTS2)
-	$(CC) $(CFLAGS) -o $(TARGET2) $(OBJECTS2)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $(TARGET2) $(OBJECTS2)
 
 # $(TARGET3): $(OBJECTS3)
 # 	$(CC) $(CFLAGS) -o $(TARGET3) $(OBJECTS3)
