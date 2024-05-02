@@ -446,6 +446,14 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
 
     set<int> deleted_keys;
 
+    // dynamically allocate memory for the fence pointers array
+    delete[] this->fp_array_;
+    this->num_fence_ptrs_ = (this->curr_size_ + num_elements_to_merge) / FENCE_PTR_EVERY_K_ENTRIES;
+    if ((this->curr_size_ + num_elements_to_merge) % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+        ++this->num_fence_ptrs_;
+    }
+    fp_array_ = new fence_ptr[num_fence_ptrs_];
+
     while (my_ptr < curr_size_ && child_ptr < num_elements_to_merge) {
 
         // assert(new_child_data[child_ptr].key == child_data[child_ptr].key && new_child_data[child_ptr].value == child_data[child_ptr].value && new_child_data[child_ptr].deleted == child_data[child_ptr].deleted);
@@ -503,7 +511,21 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
             // cout << "WE SHOULD NOT HAVE 2 KEYS THAT ARE EQUAL IN MY CUSTOM COMMANDS WORKLOAD" << endl;
         }
 
-        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;
+
+
+        // if we are at the start of a new segment, begin a new fence ptr
+        if (temp_sstable_ptr % FENCE_PTR_EVERY_K_ENTRIES == 0) {
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].min_key = new_temp_sstable[temp_sstable_ptr].key;
+            // offset should be how many entries are stored so far * the data size
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].offset = temp_sstable_ptr * LSM_DATA_SIZE;
+
+
+            // update the max value of the prev fence ptr to the be the element right behind this current element
+            if (temp_sstable_ptr > 0) {
+                fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+            }
+        }
 
         ++temp_sstable_ptr;
     }
@@ -537,6 +559,20 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
         // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
         filter_->insert(new_curr_sstable[my_ptr].key);
         // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+
+        // if we are at the start of a new segment, begin a new fence ptr
+        if (temp_sstable_ptr % FENCE_PTR_EVERY_K_ENTRIES == 0) {
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].min_key = new_temp_sstable[temp_sstable_ptr].key;
+            // offset should be how many entries are stored so far * the data size
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].offset = temp_sstable_ptr * LSM_DATA_SIZE;
+
+
+            // update the max value of the prev fence ptr to the be the element right behind this current element
+            if (temp_sstable_ptr > 0) {
+                fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+            }
+        }
+
         ++my_ptr;
         ++temp_sstable_ptr;
     }
@@ -564,9 +600,25 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
         // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
         filter_->insert(new_child_data[child_ptr].key);
         // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+
+        // if we are at the start of a new segment, begin a new fence ptr
+        if (temp_sstable_ptr % FENCE_PTR_EVERY_K_ENTRIES == 0) {
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].min_key = new_temp_sstable[temp_sstable_ptr].key;
+            // offset should be how many entries are stored so far * the data size
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].offset = temp_sstable_ptr * LSM_DATA_SIZE;
+
+
+            // update the max value of the prev fence ptr to the be the element right behind this current element
+            if (temp_sstable_ptr > 0) {
+                fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+            }
+        }
         ++child_ptr;
         ++temp_sstable_ptr;
     }
+
+    // update the max key for the current fence ptr we are on after merging has finished using the last element that was stored on disk
+    fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES)].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
 
     // cout << "Finished third merging loop" << endl;
 
@@ -584,6 +636,22 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
 
     curr_size_ = temp_sstable_ptr;
     // cout << "Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
+
+
+    // update this->num_fence_ptrs to be based on curr_size
+    this->num_fence_ptrs_ = this->curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
+    if (this->curr_size_ % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+        ++this->num_fence_ptrs_;
+    }
+    // cout << "Level " << this->curr_level_ << " has " << this->num_fence_ptrs_ << " fence ptrs" << endl;
+    // // printing fence ptr contents
+    // for (int i = 0; i < this->num_fence_ptrs_; ++i) {
+    //     cout << "Fence ptr " << i << endl;
+    //     cout << "min_key: " << fp_array_[i].min_key << endl;
+    //     cout << "max_key: " << fp_array_[i].max_key << endl;
+    //     cout << "offset: " << fp_array_[i].offset << endl;
+    //     cout << endl;
+    // }
 
     // write curr_size to metadata file
     metadata_file_ptr[curr_level_] = curr_size_;
@@ -677,7 +745,7 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
     }
     // cout << "A merge just happened in level " << curr_level_ << ", there are num_fence_ptrs_: " << num_fence_ptrs_ << endl;
 
-    fp_construct();
+    // fp_construct();
 
 
     // remember to reset child level's bloom filter and fence ptr array (if child is an actual level and not the buffer)

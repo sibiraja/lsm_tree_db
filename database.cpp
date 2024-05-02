@@ -52,7 +52,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
-                // cout << return_string;
+                cout << return_string;
                 break;
             case 'd':
                 iss >> key;
