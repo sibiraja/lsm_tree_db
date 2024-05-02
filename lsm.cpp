@@ -124,11 +124,11 @@ level::level(uint64_t capacity, int curr_level) {
         }
         // cout << "Going to fsync()" << endl;
         // fsync the file descriptor to ensure data is written to disk
-        if (fsync(fd) == -1) {
-            perror("fsync error");
-            exit(0);
-            // Handle error
-        }
+        // if (fsync(fd) == -1) {
+        //     perror("fsync error");
+        //     exit(0);
+        //     // Handle error
+        // }
         // cout << "Going to munmap()" << endl;
         rflag = munmap(curr_level_data, max_file_size);
         if(rflag == -1)
@@ -292,39 +292,39 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
         curr_size_ = 0;
         // cout << "Bc we cascade merged, Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
 
-        int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-        if (curr_fd == -1) {
-            cout << "Error in opening / creating " << disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
-            exit(0);
-        }
+        // int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        // if (curr_fd == -1) {
+        //     cout << "Error in opening / creating " << disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        //     exit(0);
+        // }
         
-        lsm_data* curr_file_ptr = (lsm_data*) mmap(0,max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
-        if (curr_file_ptr == MAP_FAILED)
-        {
-            cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
-            close(curr_fd);
-            exit(0);
-        }
+        // lsm_data* curr_file_ptr = (lsm_data*) mmap(0,max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+        // if (curr_file_ptr == MAP_FAILED)
+        // {
+        //     cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        //     close(curr_fd);
+        //     exit(0);
+        // }
 
         // memset(curr_file_ptr, 0, max_file_size); --> recall that we don't need to do this as long as we correctly maintain the curr_size value
-        int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
-        if(rflag == -1) {
-            printf("Unable to msync.\n");
-            exit(0);
-        }
+        // int rflag = msync(curr_file_ptr, max_file_size, MS_SYNC);
+        // if(rflag == -1) {
+        //     printf("Unable to msync.\n");
+        //     exit(0);
+        // }
 
-        // fsync the file descriptor to ensure data is written to disk
-        if (fsync(curr_fd) == -1) {
-            perror("fsync error");
-            exit(0);
-            // Handle error
-        }
-        rflag = munmap(curr_file_ptr, max_file_size);
-        if(rflag == -1)
-        {
-            printf("Unable to munmap.\n");
-        }
-        close(curr_fd);
+        // // fsync the file descriptor to ensure data is written to disk
+        // if (fsync(curr_fd) == -1) {
+        //     perror("fsync error");
+        //     exit(0);
+        //     // Handle error
+        // }
+        // int rflag = munmap(curr_file_ptr, max_file_size);
+        // if(rflag == -1)
+        // {
+        //     printf("Unable to munmap.\n");
+        // }
+        // close(curr_fd);
         // cout << "Memset level " << curr_level_ << "'s file to all 0's bc it has been merged with another level!" << endl;
     } else if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ == MAX_LEVELS) {
         cout << "ERROR: CAN'T CASCADE MERGE, DATABASE IS FULL!" << endl;
@@ -597,10 +597,10 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
         exit(0);
     }
     // fsync the file descriptor to ensure data is written to disk
-    if (fsync(metadata_file_descriptor) == -1) {
-        perror("fsync error");
-        // Handle error
-    }
+    // if (fsync(metadata_file_descriptor) == -1) {
+    //     perror("fsync error");
+    //     // Handle error
+    // }
 
 
     // MSYNC temp data file and munmap temp file
@@ -614,10 +614,10 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
             printf("Unable to msync.\n");
         }
         // fsync the file descriptor to ensure data is written to disk
-        if (fsync(temp_fd) == -1) {
-            perror("fsync error");
-            // Handle error
-        }
+        // if (fsync(temp_fd) == -1) {
+        //     perror("fsync error");
+        //     // Handle error
+        // }
         rflag = munmap(new_temp_sstable, max_file_size);
         if(rflag == -1)
         {
@@ -678,6 +678,15 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
     // cout << "A merge just happened in level " << curr_level_ << ", there are num_fence_ptrs_: " << num_fence_ptrs_ << endl;
 
     fp_construct();
+
+
+    // remember to reset child level's bloom filter and fence ptr array (if child is an actual level and not the buffer)
+    if (child_level != 0) {
+        delete levels_[child_level]->filter_;
+        levels_[child_level]->filter_ = nullptr;
+        delete[] levels_[child_level]->fp_array_;
+        levels_[child_level]->fp_array_ = nullptr;
+    }
 
     return true;
 }
@@ -804,10 +813,10 @@ lsm_tree::lsm_tree() {
             exit(0);
         }
         // fsync the file descriptor to ensure data is written to disk
-        if (fsync(metadata_file_descriptor) == -1) {
-            perror("fsync error");
-            // Handle error
-        }
+        // if (fsync(metadata_file_descriptor) == -1) {
+        //     perror("fsync error");
+        //     // Handle error
+        // }
 
         metadata_file_descriptor = fd;
     }
@@ -906,11 +915,11 @@ void lsm_tree::merge_level(int i) {
     }
 
     // fsync the file descriptor to ensure data is written to disk
-    if (fsync(curr_fd) == -1) {
-        perror("fsync error");
-        exit(0);
-        // Handle error
-    }
+    // if (fsync(curr_fd) == -1) {
+    //     perror("fsync error");
+    //     exit(0);
+    //     // Handle error
+    // }
     rflag = munmap(curr_file_ptr, curr_level_ptr->max_file_size);
     if(rflag == -1)
     {
