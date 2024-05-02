@@ -7,10 +7,15 @@
 
 using namespace std;
 
-uint64_t lines_processed;
+uint64_t lines_processed = 0;
+uint64_t elements_inserted_via_load = 0;
 
 void load(string& fileName, lsm_tree* lsm_tree_obj) {
     ifstream file;
+
+    // Remove quotes from fileName if they exist
+    fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return c == '"' || c == '\''; }), fileName.end());
+
     string newfileName = "generator/" + fileName;
     file.open(newfileName, ios::binary);
     if (file) {
@@ -20,6 +25,10 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
             file.read(reinterpret_cast<char*>(&key), sizeof(key));
             file.read(reinterpret_cast<char*>(&value), sizeof(value));
             lsm_tree_obj->insert({key, value});
+            ++elements_inserted_via_load;
+            if (elements_inserted_via_load % 10000 == 0) {
+                cout << "Elements inserted: " << elements_inserted_via_load << endl;
+            }
         }
         file.close();
     } else {
@@ -43,7 +52,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
-                cout << return_string;
+                // cout << return_string;
                 break;
             case 'd':
                 iss >> key;
