@@ -1041,10 +1041,16 @@ string lsm_tree::get(int key) {
         }
         // cout << "Level " << i << "'s bloom filter contains " << key << endl;
 
-        // loop through every fence pointer
-        for (int j = 0; j < curr_level_ptr->num_fence_ptrs_; ++j) {
-            if (curr_level_ptr->fp_array_[j].min_key <= key && key <= curr_level_ptr->fp_array_[j].max_key) {
-
+        // binary search on fence pointers to find which fence pointer, if any, would contain the target key
+        int low = 0;
+        int high = curr_level_ptr->num_fence_ptrs_ - 1;
+        while (low <= high ) {
+            int mid = low + (high - low) / 2;
+            if (key < curr_level_ptr->fp_array_[mid].min_key) {
+                high = mid - 1;
+            } else if (key > curr_level_ptr->fp_array_[mid].max_key) {
+                low = mid + 1;
+            } else {
                 int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
 
                 if (curr_fd == -1) {
@@ -1057,13 +1063,13 @@ string lsm_tree::get(int key) {
                 // Determine the number of entries to read for this segment
                 int entriesToRead = FENCE_PTR_EVERY_K_ENTRIES;
                 // If this is the last segment, adjust the number of entries to read
-                if (j == curr_level_ptr->num_fence_ptrs_ - 1) {
-                    int remainingEntries = curr_level_ptr->curr_size_ - (j * FENCE_PTR_EVERY_K_ENTRIES);
+                if (mid == curr_level_ptr->num_fence_ptrs_ - 1) {
+                    int remainingEntries = curr_level_ptr->curr_size_ - (mid * FENCE_PTR_EVERY_K_ENTRIES);
                     entriesToRead = remainingEntries;
                 }
 
                 ssize_t bytesToRead = entriesToRead * sizeof(lsm_data);
-                ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
+                ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[mid].offset);
                 if (bytesRead < 0) {
                     cout << "Error reading from file" << endl;
                     exit(EXIT_FAILURE);
@@ -1228,74 +1234,6 @@ string lsm_tree::range(int start, int end) {
     }
     ss << endl;
     return ss.str();
-
-
-    // for (int i = 1; i < MAX_LEVELS; ++i) {
-    //     auto curr_level_ptr = levels_[i];
-    //     lock_guard<mutex> current_level_lock(curr_level_ptr->mutex_);
-    //     auto curr_bloom_filter = levels_[i]->filter_;
-    //     if (!curr_bloom_filter) {
-    //         assert(curr_level_ptr->curr_size_ == 0);
-    //     }
-
-    //     // loop through every fence ptr
-    //     for (int j = 0; j < curr_level_ptr->num_fence_ptrs_; ++j) {
-    //         // if current fence ptr has some overlap with the given range, iterate through fence ptr's segment 
-    //         if (curr_level_ptr->fp_array_[j].min_key < end && start <= curr_level_ptr->fp_array_[j].max_key) {
-
-    //             int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-
-    //             if (curr_fd == -1) {
-    //                 cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
-    //                 exit(0);
-    //             }
-
-    //             lsm_data segment_buffer[FENCE_PTR_EVERY_K_ENTRIES];
-
-    //             // Determine the number of entries to read for this segment
-    //             int entriesToRead = FENCE_PTR_EVERY_K_ENTRIES;
-    //             // If this is the last segment, adjust the number of entries to read
-    //             if (j == curr_level_ptr->num_fence_ptrs_ - 1) {
-    //                 int remainingEntries = curr_level_ptr->curr_size_ - (j * FENCE_PTR_EVERY_K_ENTRIES);
-    //                 entriesToRead = remainingEntries;
-    //             }
-
-    //             ssize_t bytesToRead = entriesToRead * sizeof(lsm_data);
-    //             ssize_t bytesRead = pread(curr_fd, segment_buffer, bytesToRead, curr_level_ptr->fp_array_[j].offset);
-    //             if (bytesRead < 0) {
-    //                 cout << "Error reading from file" << endl;
-    //                 exit(EXIT_FAILURE);
-    //             }
-
-    //             if (bytesRead % sizeof(lsm_data) != 0) {
-    //                 cout << "Did not read a full data entry in pread()!" << endl;
-    //                 exit(EXIT_FAILURE);
-    //             }
-
-    //             int num_entries_in_segment = bytesRead / sizeof(lsm_data);
-
-
-    //             // iterate through each element in the segment buffer
-    //             for (int k = 0; k < num_entries_in_segment; ++k) {
-    //                 if (start <= segment_buffer[k].key && segment_buffer[k].key < end && keys_found.find(segment_buffer[k].key) == keys_found.end()) {
-    //                     if (segment_buffer[k].value != DELETED_FLAG) {
-    //                         // cout << segment_buffer[k].key << ":" << segment_buffer[k].value << " ";
-    //                         ss << to_string(segment_buffer[k].key) << ":" << to_string(segment_buffer[k].value) << " ";
-    //                     }
-
-    //                     keys_found.insert(segment_buffer[k].key);
-    //                 }
-    //             }
-
-    //             close(curr_fd);
-
-    //         }
-    //     }
-    // }
-
-    // // cout << endl;
-    // ss << endl;
-    // return ss.str();
 }
 
 // lsm_tree::delete_key()
