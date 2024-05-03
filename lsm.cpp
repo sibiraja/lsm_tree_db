@@ -1202,7 +1202,8 @@ string lsm_tree::range(int start, int end) {
 
                 int num_entries_in_segment = bytesRead / sizeof(lsm_data);
                 for (int k = 0; k < num_entries_in_segment; ++k) {
-                    if (start <= segment_buffer[k].key && segment_buffer[k].key < end && segment_buffer[k].value != DELETED_FLAG) {
+                    // if (start <= segment_buffer[k].key && segment_buffer[k].key < end && segment_buffer[k].value != DELETED_FLAG) {
+                    if (start <= segment_buffer[k].key && segment_buffer[k].key < end) {
                         lock_guard<mutex> guard(result_mutex);
                         auto it = found_keys.find(segment_buffer[k].key);
                         if (it == found_keys.end() || it->second.first > level) {
