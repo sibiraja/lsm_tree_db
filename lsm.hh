@@ -29,7 +29,7 @@
 #define FENCE_PTR_EVERY_K_ENTRIES   1024 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               8
 #define DELETED_FLAG                INT_MIN
-#define PARALLEL_RANGE              true
+#define PARALLEL_RANGE              false // set to false for now, 
 
 
 using namespace std;
