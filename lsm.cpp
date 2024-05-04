@@ -69,6 +69,7 @@ level::level(uint64_t capacity, int curr_level) {
         }
 
         bf_fp_construct();
+        // cout << "Finished reconstructing level " << curr_level_ << endl;
     } 
     // else, create a file for this level
     else {
@@ -200,9 +201,16 @@ level::level(uint64_t capacity, int curr_level) {
 //      already have data files that we want to initialize the database with, so we construct bloom filters and fence
 //      pointers on startup
 void level::bf_fp_construct() {
+    // cout << "inside bf_fp_construct() for level " << curr_level_ << endl;
     // when we start up the database and we have files for levels but those files contain no data, we don't want to construct bloom filters or fence pointers,
     // so simply return --> this was also giving me an error since having `parameters.projected_element_count = 0` was not handled correctly in bloom filter library
     if (curr_size_ == 0) {
+        // cout << "level " << curr_level_ << " has curr_size_ == 0, so no need to construct anything" << endl;
+        
+        // remember to set BF and FPs to nullptr just to be safe
+        filter_ = nullptr;
+        num_fence_ptrs_ = 0;
+        fp_array_ = nullptr;
         return;
     }
 
@@ -252,6 +260,11 @@ void level::bf_fp_construct() {
 
     // TODO: this line is prolly wrong because we have no idea how many fence ptrs we will need when restarting database after
     // startup, it is initialized to 0 in lsm.hh. need to set it to curr_size / EVERY_K, and then add 1 if we have any remainders
+    num_fence_ptrs_ = curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
+    if (curr_size_ % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+        ++num_fence_ptrs_;
+    }
+    // cout << "Inside bf_fp_construct(), set level " << curr_level_ << "'s num_fence_ptrs_: " << num_fence_ptrs_ << endl;
     fp_array_ = new fence_ptr[num_fence_ptrs_];
 
     // Loop to construct fence pointers
@@ -366,12 +379,14 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
         assert(buffer_ptr == nullptr);
         // cout << "child is a level, mmap()'ing!" << endl;
         // new_child_data = mmap the level's disk file
-        child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        // child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDONLY);
         if (child_fd == -1) {
             cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
-        new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
+        // new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
+        new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ, MAP_SHARED, child_fd, 0);
 
         if (new_child_data == MAP_FAILED)
         {
@@ -1050,6 +1065,7 @@ void lsm_tree::merge_level(int i) {
 string lsm_tree::get(int key) {
     stringstream ss;
     // do linear search on the buffer (since buffer isn't sorted)
+    // cout << "[get()] targetkey: " << key << endl;
 
     // GET LOCK ON BUFFER HERE, in a code snippet with separate scope to make sure the buffer's lock is not
     // held when we search through each level's data
@@ -1071,6 +1087,8 @@ string lsm_tree::get(int key) {
             }
         }
     }
+
+    // cout << "not found in buffer" << endl;
     
 
 
@@ -1090,16 +1108,30 @@ string lsm_tree::get(int key) {
         // binary search on fence pointers to find which fence pointer, if any, would contain the target key
         int low = 0;
         int high = curr_level_ptr->num_fence_ptrs_ - 1;
+        bool avoid_infinite_loop = false;
         while (low <= high ) {
             int mid = low + (high - low) / 2;
+            // if (key == -901585839) {
+            //     cout << "low: " << low << "| high: " << high << " | mid: " << mid << endl;
+            // }
             if (key < curr_level_ptr->fp_array_[mid].min_key) {
                 high = mid - 1;
             } else if (key > curr_level_ptr->fp_array_[mid].max_key) {
                 low = mid + 1;
             } else {
-                int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+                if (avoid_infinite_loop) {
+                    // cout << "AVOIDING INFINITE LOOP" << endl;
+                    break;
+                }
+                // int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR, (mode_t)0600);
+                errno = 0;
+                struct stat file_exists;
+                while (stat (levels_[i]->disk_file_name_.c_str(), &file_exists) != 0) {
+                    // busy wait to ensure that the file exists
+                }
+                int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDONLY);
 
-                if (curr_fd == -1) {
+                if (curr_fd < 0) {
                     cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
                     exit(0);
                 }
@@ -1134,6 +1166,10 @@ string lsm_tree::get(int key) {
                 int right = num_entries_in_segment - 1;
                 while (left <= right) {
                     int midpoint = (left + right) / 2;
+                    // if (key == -901585839) {
+                    //     cout << "left: " << left << "| right: " << right << " | midpoint: " << midpoint << endl;
+                    // }
+                    // cout << "left: " << left << "| right: " << right << " | midpoint: " << midpoint << endl;
                     if (segment_buffer[midpoint].key == key) {
 
                         if (segment_buffer[midpoint].value == DELETED_FLAG) {
@@ -1160,6 +1196,8 @@ string lsm_tree::get(int key) {
                         right = midpoint - 1;
                     }
                 }
+
+                avoid_infinite_loop = true;
 
                 close(curr_fd); // make sure to close the fd that we opened
             }
@@ -1219,7 +1257,8 @@ string lsm_tree::range(int start, int end) {
 
         for (int j = 0; j < curr_level_ptr->num_fence_ptrs_; ++j) {
             if (curr_level_ptr->fp_array_[j].min_key < end && start <= curr_level_ptr->fp_array_[j].max_key) {
-                int curr_fd = open(levels_[level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+                // int curr_fd = open(levels_[level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+                int curr_fd = open(levels_[level]->disk_file_name_.c_str(), O_RDONLY);
                 if (curr_fd == -1) {
                     cout << "Error in opening / creating " << levels_[level]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
                     exit(0);
@@ -1436,12 +1475,14 @@ string lsm_tree::printStats() {
         // cout << "===Level " << i << " contents===" << endl;
         // auto curr_level_ptr = levels_[i];
 
-        int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        // int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+        int curr_fd = open(levels_[i]->disk_file_name_.c_str(), O_RDONLY);
         if (curr_fd == -1) {
             cout << "Error in opening / creating " << levels_[i]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
             exit(0);
         }
-        lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+        // lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+        lsm_data* new_curr_sstable = (lsm_data*) mmap(0, levels_[i]->max_file_size, PROT_READ, MAP_SHARED, curr_fd, 0);
         if (new_curr_sstable == MAP_FAILED)
         {
             cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;

@@ -1,0 +1,5 @@
+=====NEW RUN=====
+              disk0               disk4               disk5       cpu    load average
+    KB/t  tps  MB/s     KB/t  tps  MB/s     KB/t  tps  MB/s  us sy id   1m   5m   15m
+  218.03   10  2.22    18.44    0  0.00   975.08    0  0.01   8  3 89  1.05 1.86 2.19
+   42.20   20  0.82     0.00    0  0.00     0.00    0  0.00  27  5 68  1.05 1.86 2.19

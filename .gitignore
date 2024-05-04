@@ -3,4 +3,7 @@
 cachegrind.out*
 *_put.txt
 *_get.txt
+*_range.txt
+*_delete.txt
+*_load.txt
 *.dat

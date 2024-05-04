@@ -9,6 +9,7 @@ using namespace std;
 
 uint64_t lines_processed = 0;
 uint64_t elements_inserted_via_load = 0;
+uint64_t range_queries_finished = 0;
 
 void load(string& fileName, lsm_tree* lsm_tree_obj) {
     ifstream file;
@@ -52,7 +53,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
-                // cout << return_string;
+                cout << return_string;
                 break;
             case 'd':
                 iss >> key;
@@ -61,6 +62,8 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'r':
                 iss >> startKey >> endKey;
                 return_string = db->range(startKey, endKey);
+                ++range_queries_finished;
+                cout << "range_queries_finished: " << range_queries_finished << endl;
                 // cout << return_string;
                 break;
             case 'l':
