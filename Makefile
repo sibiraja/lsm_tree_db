@@ -7,10 +7,8 @@ CC=g++
 # High performance flags
 CFLAGS=-std=c++11 -O3 -march=native -flto -Wall -Wextra -pedantic -Wno-missing-field-initializers -pthread -fstack-protector-strong
 
-# New Debugging flags
+# New Debugging flags (yo turns out this works on m1 even with address sanitizer, idk why it was being weird before)
 # CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread -fstack-protector-strong -fsanitize=address
-# debugging flags for m1 mac: address sanitizer was giving some weird issues
-# CFLAGS=-std=c++11 -g -Wall -Wextra -pedantic -Wno-missing-field-initializers -ggdb -D_FILE_OFFSET_BITS=64 -pthread -fstack-protector-strong
 
 # Linker flags
 LDFLAGS=-flto
