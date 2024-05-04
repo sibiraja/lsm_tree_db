@@ -12,6 +12,13 @@ workload_filename="${data_size_string}_load.txt"
 # This is the number of insertions that should be used in the generator script
 num_insertions=$2
 
+# need this because the `cd`'ing that I do is from the perspective of the master script's pwd. this fix works for now
+cd "${script_dir}"
+
+# Echo the present working directory (PWD)
+# echo "Current working directory after changing directories: $(pwd)"
+
+
 # Navigate to generator directory and generate the load workload and the .dat files for that workload
 cd ../../../generator/
 ./generator --puts "$num_insertions" --external-puts > "${script_dir}/${workload_filename}"
@@ -24,6 +31,7 @@ iostat_output="${script_dir}/iostat_${data_size_string}.txt"
 echo "=====NEW RUN=====" >> "$iostat_output"
 iostat 1 >> "$iostat_output" 2>&1 &
 IOSTAT_PID=$!
+
 
 # Navigate to the directory of the database executable (currently in generator subdir)
 cd ../

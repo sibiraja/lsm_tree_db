@@ -18,6 +18,12 @@ echo "=====NEW RUN=====" >> "$iostat_output"
 iostat 1 >> "$iostat_output" 2>&1 &
 IOSTAT_PID=$!
 
+# need this because the `cd`'ing that I do is from the perspective of the master script's pwd. this fix works for now
+cd "${script_dir}"
+
+# Echo the present working directory (PWD)
+# echo "Current working directory after changing directories: $(pwd)"
+
 # Navigate to the directory of the database executable (currently in put_profile subdir)
 cd ../../../
 

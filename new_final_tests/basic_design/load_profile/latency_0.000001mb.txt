@@ -1,8 +1,0 @@
-
-
-=====NEW RUN=====
-
-
-real	0m0.115s
-user	0m0.001s
-sys	0m0.004s
