@@ -1,0 +1,90 @@
+
+
+=====NEW RUN=====
+
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	23m34.983s
+user	12m53.389s
+sys	2m40.641s
+
+
+=====NEW RUN=====
+
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	23m34.850s
+user	12m56.866s
+sys	2m37.929s
+
+
+=====NEW RUN=====
+
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	23m49.857s
+user	12m53.077s
+sys	2m39.821s
+
+
+=====NEW RUN=====
+
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	24m25.186s
+user	12m52.622s
+sys	2m39.859s
+
+
+=====NEW RUN=====
+
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	24m3.988s
+user	12m52.963s
+sys	2m38.516s
