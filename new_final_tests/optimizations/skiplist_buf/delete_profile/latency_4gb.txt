@@ -1,0 +1,90 @@
+
+
+=====NEW RUN=====
+
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+
+real	0m21.344s
+user	0m20.705s
+sys	0m0.590s
+
+
+=====NEW RUN=====
+
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+
+real	0m21.826s
+user	0m21.191s
+sys	0m0.580s
+
+
+=====NEW RUN=====
+
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+
+real	0m21.253s
+user	0m20.696s
+sys	0m0.530s
+
+
+=====NEW RUN=====
+
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+
+real	0m21.036s
+user	0m20.416s
+sys	0m0.575s
+
+
+=====NEW RUN=====
+
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+
+real	0m22.078s
+user	0m21.515s
+sys	0m0.526s

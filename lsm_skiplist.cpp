@@ -1174,7 +1174,7 @@ bool buffer::insert(lsm_data kv_pair) {
     // first check if key already exists in buffer. if so, just update its value directly
     auto node = buffer_skiplist->skipSearch(kv_pair.key);
     if (node->key == kv_pair.key) {
-        cout << "DUPLICATE ENTRY FOUND FOR: (" << node->key << ", " << node->value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
+        // cout << "DUPLICATE ENTRY FOUND FOR: (" << node->key << ", " << node->value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
         node->value = kv_pair.value;
         return true;
     }
