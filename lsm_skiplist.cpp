@@ -292,14 +292,356 @@ void level::bf_fp_construct() {
     munmap(data, max_file_size);
     close(fd);
 }
+
+// level::merge() --> this function overload strictly merges the buffer's skiplist with level 1 disk data
+bool level::merge(uint64_t num_elements_to_merge, int child_level, skipList** buffer_skiplist) {
+    assert(child_level == 0);
+    lock_guard<mutex> curr_level_lock(this->mutex_);
+
+    if (num_elements_to_merge <= 0) {
+        return true;
+    }
+
+    // check for a potential cascade of merges
+    if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ != MAX_LEVELS) {
+        // cout << "Need to cascade merge level " << curr_level_ << " with level " << curr_level_ + 1 << endl;
+        next_->merge(curr_size_, curr_level_);
+
+        // reset data for this level as it has been merged with another level already
+        curr_size_ = 0;
+        // cout << "Bc we cascade merged, Just set level " << this->curr_level_ << "'s curr_size_: " << curr_size_ << endl;
+    } else if (capacity_ - curr_size_ < num_elements_to_merge && curr_level_ == MAX_LEVELS) {
+        cout << "ERROR: CAN'T CASCADE MERGE, DATABASE IS FULL!" << endl;
+        exit(0);
+        // return false;
+    }
+
+    // mmap() current file's contents
+    int curr_fd = open(disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+    if (curr_fd == -1) {
+        cout << "Error in opening / creating " << disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        exit(0);
+    }
+    lsm_data* new_curr_sstable = (lsm_data*) mmap(0, max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, curr_fd, 0);
+    if (new_curr_sstable == MAP_FAILED)
+    {
+        cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        close(curr_fd);
+        exit(0);
+    }
+    // cout << "mmap()'ed the current level's file!" << endl;
+
+
+    // create and mmap a temporary file that we will write the new merged contents to. this file will later be renamed the LEVEL#.data file
+    int temp_fd = open("data/TEMP.data", O_RDWR | O_CREAT, (mode_t)0600);
+    if (temp_fd == -1) {
+        cout << "Error in opening / creating TEMP.data file! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        exit(0);
+    }
+
+    /* Moving the file pointer to the end of the file*/
+    int rflag = lseek(temp_fd, max_file_size-1, SEEK_SET);
+    
+    if(rflag == -1)
+    {
+        cout << "Lseek failed in creating a temporary file for level " << this->curr_level_ << " in merge()! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        close(temp_fd);
+        exit(0);
+    }
+
+    /*Writing an empty string to the end of the file so that file is actually created and space is reserved on the disk*/
+    rflag = write(temp_fd, "", 1);
+    if(rflag == -1)
+    {
+        cout << "Writing empty string failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        close(temp_fd);
+        exit(0);
+    }
+
+    lsm_data* new_temp_sstable = (lsm_data*) mmap(0, max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, temp_fd, 0);
+    if (new_temp_sstable == MAP_FAILED)
+    {
+        cout << "mmap() on the current level's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        close(temp_fd);
+        exit(0);
+    }
+    // cout << "mmap()'ed the temp data file!" << endl;
+
+
+    // Bloom filter set up
+    bloom_parameters parameters;
+    parameters.projected_element_count = curr_size_ + num_elements_to_merge; // How many elements roughly do we expect to insert?
+    parameters.false_positive_probability = 0.0001; // Maximum tolerable false positive probability? (0,1) --> 1 in 10000
+    parameters.random_seed = 0xA5A5A5A5; // Simple randomizer (optional)
+    if (!parameters)
+    {
+        std::cout << "Error - Invalid set of bloom filter parameters!" << std::endl;
+        exit(0);
+    }
+    parameters.compute_optimal_parameters();
+    if (filter_) {
+        // cout << "inside merge(), going to delete BF for level " << curr_level_ << endl;
+        delete filter_; // delete previous bloom filter we may have had
+    }
+    // delete filter_; // delete previous bloom filter we may have had
+    // cout << "inside merge(), going to allocate new BF for level " << curr_level_ << endl;
+    filter_ = new bloom_filter(parameters);
+
+    // cout << "Initialized bf and fp's" << endl;
+
+    // dynamically allocate memory for the fence pointers array
+    if (this->fp_array_) {
+        // cout << "inside merge(), going to delete fp_array for level " << curr_level_ << endl;
+        delete[] this->fp_array_;
+        this->fp_array_ = nullptr;
+    }
+    this->num_fence_ptrs_ = (this->curr_size_ + num_elements_to_merge) / FENCE_PTR_EVERY_K_ENTRIES;
+    if ((this->curr_size_ + num_elements_to_merge) % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+        ++this->num_fence_ptrs_;
+    }
+    assert(num_fence_ptrs_ > 0);
+    // cout << "inside merge(), going to allocate new fp_array for level " << curr_level_ << endl;
+    fp_array_ = new fence_ptr[num_fence_ptrs_];
+
+
+    // ===SORTING LOGIC STARTS NOW====
+
+    // merge 2 sorted arrays into 1 sorted array
+    uint64_t my_ptr = 0;
+    uint64_t temp_sstable_ptr = 0;
+
+    // get the head node of the top most level
+    auto curr_node = (*buffer_skiplist)->head;
+    // move curr_node to point to the beginning of the lowest level linked list so we can iterate through all the nodes in sorted order
+    while (curr_node->below) {
+        curr_node = curr_node->below;
+    }
+    // because curr_node currently points to the head element, move it to the first item in the skiplist
+    curr_node = curr_node->next;
+    // DON'T DO THIS: WEIRD BEHAVIOR::::the condition to break out will be if the curr_node is equal to the tail element, bc that means we are at the end 
+    uint64_t buffer_index = 0;
+    // cout << "About to merge 2 sorted arrays..." << endl;
+
+    // while (my_ptr < curr_size_ && curr_node != (*buffer_skiplist)->tail) {
+    while (my_ptr < curr_size_ && buffer_index < num_elements_to_merge) {
+
+        // if both are the same key, and child buffer element is deleted, skip over both
+        if (new_curr_sstable[my_ptr].key == curr_node->key && (curr_node->value == DELETED_FLAG)) {
+            ++my_ptr;
+            ++buffer_index;
+            curr_node = curr_node->next;
+            continue; // so we don't execute the below conditions
+        } 
+    
+        // cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << " | new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
+
+        if (new_curr_sstable[my_ptr].key < curr_node->key) {
+            new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value};
+            filter_->insert(new_curr_sstable[my_ptr].key);
+            // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+            ++my_ptr;
+        } else if (new_curr_sstable[my_ptr].key > curr_node->key) {
+            new_temp_sstable[temp_sstable_ptr] = {curr_node->key, curr_node->value};
+            filter_->insert(curr_node->key);
+            // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+            curr_node = curr_node->next;
+            ++buffer_index;
+        } else {
+            // else, both keys are equal, so pick the key from the smaller level and skip over the key in the larger level since it is older
+            new_temp_sstable[temp_sstable_ptr] = {curr_node->key, curr_node->value};
+            filter_->insert(curr_node->key);
+            curr_node = curr_node->next;
+            ++my_ptr;
+            ++buffer_index;
+
+            // cout << "WE SHOULD NOT HAVE 2 KEYS THAT ARE EQUAL IN MY CUSTOM COMMANDS WORKLOAD" << endl;
+        }
+
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;
+
+
+        // if we are at the start of a new segment, begin a new fence ptr
+        if (temp_sstable_ptr % FENCE_PTR_EVERY_K_ENTRIES == 0) {
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].min_key = new_temp_sstable[temp_sstable_ptr].key;
+            // offset should be how many entries are stored so far * the data size
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].offset = temp_sstable_ptr * LSM_DATA_SIZE;
+
+
+            // update the max value of the prev fence ptr to the be the element right behind this current element
+            if (temp_sstable_ptr > 0) {
+                fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+            }
+        }
+
+        ++temp_sstable_ptr;
+    }
+
+    while (my_ptr < curr_size_ ) {
+
+        // cout << "new_curr_sstable[my_ptr].key: " << new_curr_sstable[my_ptr].key << endl;
+
+        // assert(sstable_[my_ptr].deleted == false);
+
+        auto curr_key = new_curr_sstable[my_ptr].key;
+        auto curr_value = new_curr_sstable[my_ptr].value;
+
+        lsm_data struct_to_merge = {curr_key, curr_value};
+
+        new_temp_sstable[temp_sstable_ptr] = struct_to_merge;
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
+        // new_temp_sstable[temp_sstable_ptr] = {new_curr_sstable[my_ptr].key, new_curr_sstable[my_ptr].value, new_curr_sstable[my_ptr].deleted};
+        filter_->insert(new_curr_sstable[my_ptr].key);
+        // cout << "(" << new_curr_sstable[my_ptr].key << ", " << new_curr_sstable[my_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+
+        // if we are at the start of a new segment, begin a new fence ptr
+        if (temp_sstable_ptr % FENCE_PTR_EVERY_K_ENTRIES == 0) {
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].min_key = new_temp_sstable[temp_sstable_ptr].key;
+            // offset should be how many entries are stored so far * the data size
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].offset = temp_sstable_ptr * LSM_DATA_SIZE;
+
+
+            // update the max value of the prev fence ptr to the be the element right behind this current element
+            if (temp_sstable_ptr > 0) {
+                fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+            }
+        }
+
+        ++my_ptr;
+        ++temp_sstable_ptr;
+    }
+
+
+    // while (curr_node != (*buffer_skiplist)->tail ) {
+    while (buffer_index < num_elements_to_merge ) {
+        // cout << "new_child_data[child_ptr].key: " << new_child_data[child_ptr].key << endl;
+
+        // assert(child_data[child_ptr].deleted == false);
+
+        new_temp_sstable[temp_sstable_ptr] = {curr_node->key, curr_node->value};
+        // cout << "new_temp_sstable[temp_sstable_ptr].key: " << new_temp_sstable[temp_sstable_ptr].key << endl;  
+        filter_->insert(curr_node->key);
+        // cout << "(" << new_child_data[child_ptr].key << ", " << new_child_data[child_ptr].value << ") is merged into level " << this->curr_level_ << endl;
+
+        // if we are at the start of a new segment, begin a new fence ptr
+        if (temp_sstable_ptr % FENCE_PTR_EVERY_K_ENTRIES == 0) {
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].min_key = new_temp_sstable[temp_sstable_ptr].key;
+            // offset should be how many entries are stored so far * the data size
+            fp_array_[temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES].offset = temp_sstable_ptr * LSM_DATA_SIZE;
+
+
+            // update the max value of the prev fence ptr to the be the element right behind this current element
+            if (temp_sstable_ptr > 0) {
+                fp_array_[(temp_sstable_ptr / FENCE_PTR_EVERY_K_ENTRIES) - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+            }
+        }
+        curr_node = curr_node->next;
+        ++temp_sstable_ptr;
+        ++buffer_index;
+    }
+
+    curr_size_ = temp_sstable_ptr;
+
+    // update this->num_fence_ptrs to be based on curr_size --> we originally may have allocated more fence ptrs than we needed
+    // because of duplicates and stale deleted entries, so we want to update this to correctly represent how many fence ptrs we 
+    // actually will use to navigate through this level
+    this->num_fence_ptrs_ = this->curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
+    if (this->curr_size_ % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+        ++this->num_fence_ptrs_;
+    }
+
+    // update the max key for the current fence ptr we are on after merging has finished using the last element that was stored on disk
+    // make sure to round up temp_sstable_ptr to the nearest multiple of FENCE_PTR_EVERY_K_ENTRIES --> otherwise we access incorrect index (work out case where temp_sstable_ptr = 1 after we have merged just 1 element in total)
+    if (this->num_fence_ptrs_ > 0) {
+        fp_array_[this->num_fence_ptrs_ - 1].max_key = new_temp_sstable[temp_sstable_ptr - 1].key;
+    }
+
+
+    // write curr_size to metadata file
+    metadata_file_ptr[curr_level_] = curr_size_;
+    if (curr_level_ > 1) {
+        metadata_file_ptr[curr_level_ - 1] = 0;
+    }
+    rflag = msync(metadata_file_ptr, (MAX_LEVELS * sizeof(int)), MS_SYNC);
+    if(rflag == -1)
+    {
+        printf("Unable to msync to metadata file.\n");
+        exit(0);
+    }
+    // fsync the file descriptor to ensure data is written to disk
+    // if (fsync(metadata_file_descriptor) == -1) {
+    //     perror("fsync error");
+    //     // Handle error
+    // }
+
+
+    // MSYNC temp data file and munmap temp file
+    if (new_temp_sstable != NULL && temp_fd != -1)
+    {
+        /*Syncing the contents of the memory with file, flushing the pages to disk*/
+
+        rflag = msync(new_temp_sstable, max_file_size, MS_SYNC);
+        if(rflag == -1)
+        {
+            printf("Unable to msync.\n");
+        }
+        // fsync the file descriptor to ensure data is written to disk
+        // if (fsync(temp_fd) == -1) {
+        //     perror("fsync error");
+        //     // Handle error
+        // }
+        rflag = munmap(new_temp_sstable, max_file_size);
+        if(rflag == -1)
+        {
+            printf("Unable to munmap.\n");
+        }
+        close(temp_fd);
+    }
+
+    // munmap curr level file
+    rflag = munmap(new_curr_sstable, max_file_size);
+    if(rflag == -1)
+    {
+        printf("Unable to munmap current level's file.\n");
+    }
+    // cout << "munmap()'ed the current level's file!" << endl;
+    close(curr_fd);
+
+    
+    // NOTE: KEEP THE BELOW IF-ELSE CHECKS BC THE STATEMENTS INSIDE THE IF CONDITIONS NEED TO EXECUTE!!!!!
+    // DELETE original curr level file, rename temp data file
+    if (remove(disk_file_name_.c_str()) == 0) {
+        // cout << disk_file_name_ << " deleted successfully" << endl;
+    } else {
+        cout << "Error in deleting " << disk_file_name_ << ", Error message: " << strerror(errno) << " | Exiting program" << endl;
+        exit(0);
+    }
+
+    if (rename("data/TEMP.data", disk_file_name_.c_str()) == 0) {
+        // cout << "Successfully renamed temp file to " << disk_file_name_ << endl;
+    } else {
+        cout << "Error in renaming temp file" << " , Error message: " << strerror(errno) << " | Exiting program" << endl;
+        exit(0);
+    }
+
+    struct stat file_exists;
+    while (stat (disk_file_name_.c_str(), &file_exists) != 0) {
+        // busy wait to ensure that renaming of temp file to disk file is done
+    }
+
+
+    // calculate number of fence pointers we need
+    num_fence_ptrs_ = curr_size_ / FENCE_PTR_EVERY_K_ENTRIES;
+    if (curr_size_ % FENCE_PTR_EVERY_K_ENTRIES != 0) {
+        num_fence_ptrs_ += 1;
+    }
+    
+    return true;
+}
     
 
-// level::merge()
-//      This function merges data from the level object it is called on and the child that does the calling (which is
-//      always Level #N-1 and Level #N). It takes in an optional parameter buffer_ptr, but this is only ever
-//      passed in when the buffer calls merge() and merges data with level1. Other levels never have to merge data
-//      directly from the buffer. Note that before the merge happens, we check if a cascade merge needs to happen first
-bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** buffer_ptr) {
+// level::merge() --> this function overload strictly merges 2 levels's disk files together
+bool level::merge(uint64_t num_elements_to_merge, int child_level) {
+    assert(child_level > 0); // bc the buffer will never call this function overload
     // cout << endl;
     // cout << endl;
     // cout << "====== INSIDE NEW MERGE! Need to merge level " << curr_level_ - 1 << " with level " << curr_level_ << endl;
@@ -368,32 +710,22 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
 
     int child_fd = -1;
     lsm_data* new_child_data;
-    if (child_level == 0) {
-        // cout << "child is buffer, no need to mmap()!" << endl;
-        assert(buffer_ptr != nullptr);
-        new_child_data = *buffer_ptr;
-    } 
-    
-    // mmap child's file if it is a level and not the buffer
-    else {
-        assert(buffer_ptr == nullptr);
-        // cout << "child is a level, mmap()'ing!" << endl;
-        // new_child_data = mmap the level's disk file
-        // child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
-        child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDONLY);
-        if (child_fd == -1) {
-            cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
-            exit(0);
-        }
-        // new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
-        new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ, MAP_SHARED, child_fd, 0);
+    // cout << "child is a level, mmap()'ing!" << endl;
+    // new_child_data = mmap the level's disk file
+    // child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDWR | O_CREAT, (mode_t)0600);
+    child_fd = open(levels_[child_level]->disk_file_name_.c_str(), O_RDONLY);
+    if (child_fd == -1) {
+        cout << "Error in opening / creating " << levels_[child_level]->disk_file_name_ << " file! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        exit(0);
+    }
+    // new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ|PROT_WRITE, MAP_SHARED, child_fd, 0);
+    new_child_data = (lsm_data*) mmap(0, levels_[child_level]->max_file_size, PROT_READ, MAP_SHARED, child_fd, 0);
 
-        if (new_child_data == MAP_FAILED)
-        {
-            cout << "mmap() on the child's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
-            close(child_fd);
-            exit(0);
-        }
+    if (new_child_data == MAP_FAILED)
+    {
+        cout << "mmap() on the child's file failed! Error message: " << strerror(errno) << " | Exiting program" << endl;
+        close(child_fd);
+        exit(0);
     }
 
     // mmap() current file's contents
@@ -824,7 +1156,7 @@ bool level::merge(uint64_t num_elements_to_merge, int child_level, lsm_data** bu
 //      Just sets the ptr of the buffer's data to fresh place in memory, ready to store data
 buffer::buffer() {
     lock_guard<mutex> buffer_lock(this->mutex_);
-    buffer_ = new lsm_data[BUFFER_CAPACITY];
+    buffer_skiplist = new skipList(BUFFER_CAPACITY);
 }
     
 
@@ -839,29 +1171,27 @@ bool buffer::insert(lsm_data kv_pair) {
     // GET LOCK ON BUFFER HERE
     lock_guard<mutex> buffer_lock(this->mutex_);
 
-    for (int i = 0; i < curr_size_; ++i) {
-        if (buffer_[i].key == kv_pair.key) {
-            // cout << "DUPLICATE ENTRY FOUND FOR: (" << buffer_[i].key << ", " << buffer_[i].value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
-            buffer_[i].value = kv_pair.value;
-            return true;
-        }
+    // first check if key already exists in buffer. if so, just update its value directly
+    auto node = buffer_skiplist->skipSearch(kv_pair.key);
+    if (node->key == kv_pair.key) {
+        cout << "DUPLICATE ENTRY FOUND FOR: (" << node->key << ", " << node->value << "), UPDATING VALUE TO BE " << kv_pair.value << endl;
+        node->value = kv_pair.value;
+        return true;
     }
 
+    // if buffer is at capacity already, merge buffer data with level 1 data before putting this into the buffer
     if (curr_size_ == capacity_) {
-        // Sort the buffer before merging
-        std::sort(buffer_, buffer_ + curr_size_, [](const lsm_data& a, const lsm_data& b) {
-            return a.key < b.key;
-        });
 
-        // Merge the sorted buffer into the LSM tree
-        level1ptr_->merge(curr_size_, 0, &buffer_);
+        // Merge the skiplist into the LSM tree
+        level1ptr_->merge(curr_size_, 0, &buffer_skiplist);
         
         curr_size_ = 0;
-        delete[] buffer_;
-        buffer_ = new lsm_data[BUFFER_CAPACITY];
+        delete buffer_skiplist;
+        buffer_skiplist = new skipList(BUFFER_CAPACITY);
     }
 
-    buffer_[curr_size_] = kv_pair;
+    // insert into skip list
+    buffer_skiplist->skipInsert(kv_pair.key, kv_pair.value);
     ++curr_size_;
     // cout << "Inserted (" << kv_pair.key << ", " << kv_pair.value << ")! curr_size is now " << curr_size_ << endl;
     return true;
@@ -874,17 +1204,12 @@ void buffer::flush() {
     // GET LOCK ON BUFFER HERE
     lock_guard<mutex> buffer_lock(this->mutex_);
 
-    // Sort the buffer before merging
-    std::sort(buffer_, buffer_ + curr_size_, [](const lsm_data& a, const lsm_data& b) {
-        return a.key < b.key;
-    });
-
-    // Merge the sorted buffer into the LSM tree
-    level1ptr_->merge(curr_size_, 0, &buffer_);
+    // Merge the skiplist into the LSM tree
+    level1ptr_->merge(curr_size_, 0, &buffer_skiplist);
     
     curr_size_ = 0;
-    delete[] buffer_;
-    buffer_ = new lsm_data[BUFFER_CAPACITY];
+    delete buffer_skiplist;
+    buffer_skiplist = new skipList(BUFFER_CAPACITY);
 }
 
 
@@ -1071,20 +1396,20 @@ string lsm_tree::get(int key) {
     // held when we search through each level's data
     {
         lock_guard<mutex> buffer_lock(buffer_ptr_->mutex_);
-        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
-            if (buffer_ptr_->buffer_[i].key == key) {
-                if (buffer_ptr_->buffer_[i].value == DELETED_FLAG) {
-                    // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was DELETED so NOT FOUND!" << endl;
-                    // cout << endl;
-                    ss << endl;
-                    return ss.str();
-                }
 
-                // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer!" << endl;
-                // cout << buffer_ptr_->buffer_[i].value << endl;
-                ss << buffer_ptr_->buffer_[i].value << endl;
+        auto node = buffer_ptr_->buffer_skiplist->skipSearch(key);
+        if (node->key == key) {
+            if (node->value == DELETED_FLAG) {
+                // cout << "(" << key << ", " << node->value << ") was DELETED so NOT FOUND!" << endl;
+                // cout << endl;
+                ss << endl;
                 return ss.str();
             }
+
+            // cout << "(" << key << ", " << node->value << ") was found at buffer!" << endl;
+            // cout << node->value << endl;
+            ss << node->value << endl;
+            return ss.str();
         }
     }
 
@@ -1229,18 +1554,33 @@ string lsm_tree::range(int start, int end) {
     // held when we search through each level's data
     {
         lock_guard<mutex> buffer_lock(buffer_ptr_->mutex_);
-        // do linear search on the buffer (since buffer isn't sorted)
-        for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
-            auto curr_lsm_entry = buffer_ptr_->buffer_[i];
-            if (start <= curr_lsm_entry.key && curr_lsm_entry.key < end) {
-                if (curr_lsm_entry.value != DELETED_FLAG) {
-                    // cout << curr_lsm_entry.key << ":" << curr_lsm_entry.value << " ";
-                    // ss << to_string(curr_lsm_entry.key) << ":" << to_string(curr_lsm_entry.value) << " ";
-                }
+        
+        // iterate through skiplist linearly bc there is no guarentee which key in the given range is the smallest one in the skiplist
+        // remember to start with the node that comes right after the head node on level 0
 
-                // keys_found.insert(curr_lsm_entry.key);
-                found_keys[curr_lsm_entry.key] = make_pair(0, to_string(curr_lsm_entry.value));
+        // get the head node of the top most level
+        auto curr_node = this->buffer_ptr_->buffer_skiplist->head;
+        // move curr_node to point to the beginning of the lowest level linked list so we can iterate through all the nodes in sorted order
+        while (curr_node->below) {
+            curr_node = curr_node->below;
+        }
+        // because curr_node currently points to the head element, move it to the first item in the skiplist
+        curr_node = curr_node->next;
+        // the condition to break out will be if the curr_node is equal to the tail element, bc that means we are at the end
+        // while (curr_node != this->buffer_ptr_->buffer_skiplist->tail) {
+        for (int i = 0; i < this->buffer_ptr_->curr_size_; ++i) {
+            // once we are at the first node in the skiplist that has a higher key than the endKey in the range, we know that there will
+            // be no other nodes in the skiplist that fall within the given range as the nodes are sorted in increasing order by their keys
+            if (curr_node->key >= end) {
+                break;
             }
+            
+            if (curr_node->key >= start && curr_node->key < end) {
+                // put all keys in the found_keys map, even if they are deleted values bc that is how we avoid from avoiding stale keys in larger levels
+                found_keys[curr_node->key] = make_pair(0, to_string(curr_node->value));
+            }
+
+            curr_node = curr_node->next;
         }
     }
 
@@ -1393,26 +1733,10 @@ string lsm_tree::range(int start, int end) {
 //      setting the delete flag to be true, so when a compaction occurs when a level calls merge(), the
 //      we will skip over the deleted key when creating the new merged data
 void lsm_tree::delete_key(int key) {
-    // first search through buffer, and if it exists, just update the key value struct directly to mark as deleted
-    // --> since simply adding a new entry to the buffer for deletion might not cause the old entry to be deleted when merging later on since original comes before the new entry
-    // do linear search on the buffer (since buffer isn't sorted)
 
-    // LOCKER BUFFER HERE
-    buffer_ptr_->mutex_.lock();
-
-    for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
-        if (buffer_ptr_->buffer_[i].key == key) {
-            // cout << "(" << key << ", " << buffer_ptr_->buffer_[i].value << ") was found at buffer, MARKING FOR DELETION!" << endl;
-            buffer_ptr_->buffer_[i].value = DELETED_FLAG;
-            buffer_ptr_->mutex_.unlock();
-            return;
-        }
-    }
-
-    // UNLOCK BUFFER HERE (SINCE WE WILL LOCK/UNLOCK AGAIN INSIDE INSERT() FUNCTION)
-    buffer_ptr_->mutex_.unlock();
-
-
+    // NOTE THAT WE DON'T HAVE TO LOOP THROUGH THE BUFFER HERE TO CHECK IF THE KEY IS ALR IN THE BUFFER BECAUSE BUFFER::INSERT()
+    // ALREADY DOES THAT
+    
     // if not found in buffer, then just insert a new key value struct with the deleted flag set as true
     insert({key, DELETED_FLAG});
     return;
@@ -1448,19 +1772,50 @@ string lsm_tree::printStats() {
     // print contents of buffer
     string buffer_contents = "";
     // cout << "===Buffer contents======" << endl;
-    for (int i = 0; i < buffer_ptr_->curr_size_; ++i) {
-        auto curr_data = buffer_ptr_->buffer_[i];
-        string temp = to_string(curr_data.key) + ":" + to_string(curr_data.value) + ":L0 ";
+
+    // get the head node of the top most level
+    auto curr_node = this->buffer_ptr_->buffer_skiplist->head;
+    // move curr_node to point to the beginning of the lowest level linked list so we can iterate through all the nodes in sorted order
+    while (curr_node->below) {
+        curr_node = curr_node->below;
+    }
+    assert(curr_node != NULL);
+    // because curr_node currently points to the head element, move it to the first item in the skiplist
+    curr_node = curr_node->next;
+    assert(curr_node != NULL);
+
+    // while (curr_node != this->buffer_ptr_->buffer_skiplist->tail) {
+    //     assert(curr_node != NULL);        
+    //     string temp = to_string(curr_node->key) + ":" + to_string(curr_node->value) + ":L0 ";
+    //     buffer_contents += temp;
+
+    //     // note that buffer will never have duplicate keys, so no need to cross-reference across the deleted and valid sets here
+    //     if (curr_node->value == DELETED_FLAG) {
+    //         deleted_keys.insert(curr_node->key);
+    //     } else {
+    //         valid_keys.insert(curr_node->key);
+    //     }
+
+    //     // cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
+    //     curr_node = curr_node->next;
+    // }
+
+    for (int i  = 0; i < this->buffer_ptr_->curr_size_; ++i) {
+        assert(curr_node != NULL);        
+        string temp = to_string(curr_node->key) + ":" + to_string(curr_node->value) + ":L0 ";
         buffer_contents += temp;
 
         // note that buffer will never have duplicate keys, so no need to cross-reference across the deleted and valid sets here
-        if (curr_data.value == DELETED_FLAG) {
-            deleted_keys.insert(curr_data.key);
+        if (curr_node->value == DELETED_FLAG) {
+            deleted_keys.insert(curr_node->key);
         } else {
-            valid_keys.insert(curr_data.key);
+            valid_keys.insert(curr_node->key);
         }
+
         // cout << curr_data.key << ":" << curr_data.value << ":L0" << endl;
+        curr_node = curr_node->next;
     }
+
     // if (naive_sum != valid_keys.size()) {
     //     // note that this can occur if buffer contains deleted elements, so don't freak out immediately if this prints
     //     cout << "MISMATCH BETWEEN BUFFER SIZE AND VALID KEYS SET" << endl;
@@ -1579,8 +1934,8 @@ string lsm_tree::printStats() {
 // lsm_tree::cleanup()
 //      This function is called upon the user issuing the shutdown command (`e` on the keyboard), and it takes care of memory cleanup
 void lsm_tree::cleanup() {
-    // delete memory allocated for buffer (buffer object and array for buffer's data)
-    delete[] this->buffer_ptr_->buffer_;
+    // delete memory allocated for buffer (buffer object and skiplist for buffer's data)
+    delete this->buffer_ptr_->buffer_skiplist;
     delete this->buffer_ptr_;
 
     // delete each level's fence ptr array, bloom filters, and level object itself

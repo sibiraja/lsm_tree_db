@@ -12,6 +12,7 @@
 #include <set>
 #include <cassert>
 #include "bloom_filter.hh"
+#include "skiplist.hh"
 #include <climits>
 #include <cerrno>
 #include <cstring>
@@ -75,7 +76,9 @@ public:
     void bf_fp_construct();
 
     // only called on level1 since other levels never have to merge data directly from the buffer
-    bool merge(uint64_t num_elements_to_merge, int child_level, lsm_data** buffer_ptr = nullptr);
+    bool merge(uint64_t num_elements_to_merge, int child_level, skipList** buffer_skiplist);
+
+    bool merge(uint64_t num_elements_to_merge, int child_level);
 };
 
 
@@ -90,7 +93,8 @@ public:
 
     // note: can make this a separate data structure later, but tbh an unsorted array that sorts itself at the end is roughly the same performance as
     // a heap or BST. 
-    lsm_data* buffer_ = nullptr;
+    // lsm_data* buffer_ = nullptr;
+    skipList* buffer_skiplist = nullptr;
 
     buffer();
     
