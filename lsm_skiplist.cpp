@@ -1,7 +1,7 @@
 #include "lsm.hh"
 
 int SIZE_RATIO = 2;
-int LAST_LEVEL_SIZE_RATIO = SIZE_RATIO; // for original variant, this should just be the SIZE_RATIO, for varying size ratio, this is SIZE_RATIO * 2
+int LAST_LEVEL_SIZE_RATIO = SIZE_RATIO * 2; // for original variant, this should just be the SIZE_RATIO, for varying size ratio, this is SIZE_RATIO * 2
 int NUM_LEVELS = 9;
 // const int FENCE_PTR_EVERY_K_ENTRIES = 1024; // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 const int FIRST_FENCE_PTR_EVERY_K_ENTRIES = 512; // 1024 in original variant, 512 for 1/2 levels in varying fence_ptrs

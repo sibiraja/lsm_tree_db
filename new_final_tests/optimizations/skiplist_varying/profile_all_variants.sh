@@ -48,5 +48,12 @@ for data_size in "${DATA_SIZES_ARRAY[@]}"; do
             echo "Error in varying size ratio variant's profile.sh for data size: $data_size"
             exit 1
         fi
+
+        # Execute varying fence ptr AND varying size ratio variant profiling script, passing data_size and num_entries
+        ./skiplist_both/profile.sh "$data_size" "$num_entries"
+        if [ $? -ne 0 ]; then
+            echo "Error in varying fence ptr AND varying size ratio variant's profile.sh for data size: $data_size"
+            exit 1
+        fi
     done
 done
