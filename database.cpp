@@ -109,10 +109,16 @@ void processCommands(istream& in, lsm_tree* db) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     cout << endl << endl;
     cout << "=====NEW RUN=====" << endl << endl;
-    lsm_tree* db = new lsm_tree();
+    lsm_tree* db;
+
+    if (argc > 1) {
+        db = new lsm_tree(stoi(argv[1]));
+    } else {
+        db = new lsm_tree();
+    }
 
     processCommands(cin, db);  // Process commands from standard input
     // if db hasn't already been cleaned up yet

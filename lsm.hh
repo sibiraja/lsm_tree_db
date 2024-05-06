@@ -23,11 +23,12 @@
 #include <vector>
 
 #define INITIAL_LEVEL_CAPACITY      1024000
-#define SIZE_RATIO                  3
+// #define SIZE_RATIO                  3
+// #define LAST_LEVEL_SIZE_RATIO       SIZE_RATIO // for skiplist_original, this should just be the SIZE_RATIO
 // #define BUFFER_CAPACITY             5
 #define BUFFER_CAPACITY             10240
 #define MAX_LEVELS                  9
-#define FENCE_PTR_EVERY_K_ENTRIES   1024 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
+// #define FENCE_PTR_EVERY_K_ENTRIES   1024 // 512 = 4096 bytes / 8 bytes --> 8 bytes bc lsm_data is 4 + 4 = 8 bytes. THIS CAN BE A EXPERIMENTAL PARAMETER
 #define LSM_DATA_SIZE               8
 #define DELETED_FLAG                INT_MIN
 #define PARALLEL_RANGE              false // set to false for now, 
@@ -55,6 +56,8 @@ public:
     uint64_t capacity_;
     uint64_t curr_size_ = 0;
     int curr_level_;
+    int fptrs_every_k;
+
     level* prev_ = nullptr;
     level* next_ = nullptr;
     fence_ptr* fp_array_ = nullptr;
@@ -66,7 +69,7 @@ public:
     string disk_file_name_;
     uint64_t max_file_size;
 
-    level(uint64_t capacity, int curr_level);
+    level(uint64_t capacity, int curr_level, int fpts_every_k_assignment);
 
     // This function should re-construct fence pointers for a given level whenever we have new data at this level 
     void fp_construct();
@@ -109,7 +112,9 @@ class lsm_tree {
 public:
     buffer* buffer_ptr_;
     
-    lsm_tree();
+    // 500000000 --> 4GB worth of data
+    // 12500000
+    lsm_tree(uint64_t total_expected_entries = 500000000);
 
     bool insert(lsm_data kv_pair);
 
