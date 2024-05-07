@@ -7,3 +7,4 @@ cachegrind.out*
 *_delete.txt
 *_load.txt
 *.dat
+myenv*
