@@ -1,0 +1,660 @@
+==1073== Cachegrind, a cache and branch-prediction profiler
+==1073== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==1073== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==1073== Command: ./database_both 500000
+==1073== 
+--1073-- Warning: Cannot auto-detect cache config, using defaults.
+--1073--          Run with -v to see.
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 2
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+Lines processed: 110000
+Lines processed: 120000
+Lines processed: 130000
+Lines processed: 140000
+Lines processed: 150000
+Lines processed: 160000
+Lines processed: 170000
+Lines processed: 180000
+Lines processed: 190000
+Lines processed: 200000
+Lines processed: 210000
+Lines processed: 220000
+Lines processed: 230000
+Lines processed: 240000
+Lines processed: 250000
+Lines processed: 260000
+Lines processed: 270000
+Lines processed: 280000
+Lines processed: 290000
+Lines processed: 300000
+Lines processed: 310000
+Lines processed: 320000
+Lines processed: 330000
+Lines processed: 340000
+Lines processed: 350000
+Lines processed: 360000
+Lines processed: 370000
+Lines processed: 380000
+Lines processed: 390000
+Lines processed: 400000
+Lines processed: 410000
+Lines processed: 420000
+Lines processed: 430000
+Lines processed: 440000
+Lines processed: 450000
+Lines processed: 460000
+Lines processed: 470000
+Lines processed: 480000
+Lines processed: 490000
+Lines processed: 500000
+Lines processed: 510000
+Lines processed: 520000
+Lines processed: 530000
+Lines processed: 540000
+Lines processed: 550000
+Lines processed: 560000
+Lines processed: 570000
+Lines processed: 580000
+Lines processed: 590000
+Lines processed: 600000
+Lines processed: 610000
+Lines processed: 620000
+Lines processed: 630000
+Lines processed: 640000
+Lines processed: 650000
+Lines processed: 660000
+Lines processed: 670000
+Lines processed: 680000
+Lines processed: 690000
+Lines processed: 700000
+Lines processed: 710000
+Lines processed: 720000
+Lines processed: 730000
+Lines processed: 740000
+Lines processed: 750000
+Lines processed: 760000
+Lines processed: 770000
+Lines processed: 780000
+Lines processed: 790000
+Lines processed: 800000
+Lines processed: 810000
+Lines processed: 820000
+Lines processed: 830000
+Lines processed: 840000
+Lines processed: 850000
+Lines processed: 860000
+Lines processed: 870000
+Lines processed: 880000
+Lines processed: 890000
+Lines processed: 900000
+Lines processed: 910000
+Lines processed: 920000
+Lines processed: 930000
+Lines processed: 940000
+Lines processed: 950000
+Lines processed: 960000
+Lines processed: 970000
+Lines processed: 980000
+Lines processed: 990000
+Lines processed: 1000000
+==1073== 
+==1073== I   refs:      15,715,919,455
+==1073== I1  misses:       159,518,989
+==1073== LLi misses:           236,825
+==1073== I1  miss rate:           1.02%
+==1073== LLi miss rate:           0.00%
+==1073== 
+==1073== D   refs:       8,386,811,950  (5,617,517,165 rd   + 2,769,294,785 wr)
+==1073== D1  misses:       386,777,382  (  367,777,966 rd   +    18,999,416 wr)
+==1073== LLd misses:       121,731,437  (  119,086,267 rd   +     2,645,170 wr)
+==1073== D1  miss rate:            4.6% (          6.5%     +           0.7%  )
+==1073== LLd miss rate:            1.5% (          2.1%     +           0.1%  )
+==1073== 
+==1073== LL refs:          546,296,371  (  527,296,955 rd   +    18,999,416 wr)
+==1073== LL misses:        121,968,262  (  119,323,092 rd   +     2,645,170 wr)
+==1073== LL miss rate:             0.5% (          0.6%     +           0.1%  )
+
+real	2m48.634s
+user	1m58.679s
+sys	0m10.928s
+==1111== Cachegrind, a cache and branch-prediction profiler
+==1111== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==1111== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==1111== Command: ./database_both 500000
+==1111== 
+--1111-- Warning: Cannot auto-detect cache config, using defaults.
+--1111--          Run with -v to see.
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 2
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+Lines processed: 110000
+Lines processed: 120000
+Lines processed: 130000
+Lines processed: 140000
+Lines processed: 150000
+Lines processed: 160000
+Lines processed: 170000
+Lines processed: 180000
+Lines processed: 190000
+Lines processed: 200000
+Lines processed: 210000
+Lines processed: 220000
+Lines processed: 230000
+Lines processed: 240000
+Lines processed: 250000
+Lines processed: 260000
+Lines processed: 270000
+Lines processed: 280000
+Lines processed: 290000
+Lines processed: 300000
+Lines processed: 310000
+Lines processed: 320000
+Lines processed: 330000
+Lines processed: 340000
+Lines processed: 350000
+Lines processed: 360000
+Lines processed: 370000
+Lines processed: 380000
+Lines processed: 390000
+Lines processed: 400000
+Lines processed: 410000
+Lines processed: 420000
+Lines processed: 430000
+Lines processed: 440000
+Lines processed: 450000
+Lines processed: 460000
+Lines processed: 470000
+Lines processed: 480000
+Lines processed: 490000
+Lines processed: 500000
+Lines processed: 510000
+Lines processed: 520000
+Lines processed: 530000
+Lines processed: 540000
+Lines processed: 550000
+Lines processed: 560000
+Lines processed: 570000
+Lines processed: 580000
+Lines processed: 590000
+Lines processed: 600000
+Lines processed: 610000
+Lines processed: 620000
+Lines processed: 630000
+Lines processed: 640000
+Lines processed: 650000
+Lines processed: 660000
+Lines processed: 670000
+Lines processed: 680000
+Lines processed: 690000
+Lines processed: 700000
+Lines processed: 710000
+Lines processed: 720000
+Lines processed: 730000
+Lines processed: 740000
+Lines processed: 750000
+Lines processed: 760000
+Lines processed: 770000
+Lines processed: 780000
+Lines processed: 790000
+Lines processed: 800000
+Lines processed: 810000
+Lines processed: 820000
+Lines processed: 830000
+Lines processed: 840000
+Lines processed: 850000
+Lines processed: 860000
+Lines processed: 870000
+Lines processed: 880000
+Lines processed: 890000
+Lines processed: 900000
+Lines processed: 910000
+Lines processed: 920000
+Lines processed: 930000
+Lines processed: 940000
+Lines processed: 950000
+Lines processed: 960000
+Lines processed: 970000
+Lines processed: 980000
+Lines processed: 990000
+Lines processed: 1000000
+==1111== 
+==1111== I   refs:      15,715,919,422
+==1111== I1  misses:       159,518,989
+==1111== LLi misses:           236,825
+==1111== I1  miss rate:           1.02%
+==1111== LLi miss rate:           0.00%
+==1111== 
+==1111== D   refs:       8,386,811,940  (5,617,517,160 rd   + 2,769,294,780 wr)
+==1111== D1  misses:       386,777,382  (  367,777,966 rd   +    18,999,416 wr)
+==1111== LLd misses:       121,731,437  (  119,086,267 rd   +     2,645,170 wr)
+==1111== D1  miss rate:            4.6% (          6.5%     +           0.7%  )
+==1111== LLd miss rate:            1.5% (          2.1%     +           0.1%  )
+==1111== 
+==1111== LL refs:          546,296,371  (  527,296,955 rd   +    18,999,416 wr)
+==1111== LL misses:        121,968,262  (  119,323,092 rd   +     2,645,170 wr)
+==1111== LL miss rate:             0.5% (          0.6%     +           0.1%  )
+
+real	2m48.669s
+user	1m58.416s
+sys	0m11.067s
+==1149== Cachegrind, a cache and branch-prediction profiler
+==1149== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==1149== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==1149== Command: ./database_both 500000
+==1149== 
+--1149-- Warning: Cannot auto-detect cache config, using defaults.
+--1149--          Run with -v to see.
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 2
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+Lines processed: 110000
+Lines processed: 120000
+Lines processed: 130000
+Lines processed: 140000
+Lines processed: 150000
+Lines processed: 160000
+Lines processed: 170000
+Lines processed: 180000
+Lines processed: 190000
+Lines processed: 200000
+Lines processed: 210000
+Lines processed: 220000
+Lines processed: 230000
+Lines processed: 240000
+Lines processed: 250000
+Lines processed: 260000
+Lines processed: 270000
+Lines processed: 280000
+Lines processed: 290000
+Lines processed: 300000
+Lines processed: 310000
+Lines processed: 320000
+Lines processed: 330000
+Lines processed: 340000
+Lines processed: 350000
+Lines processed: 360000
+Lines processed: 370000
+Lines processed: 380000
+Lines processed: 390000
+Lines processed: 400000
+Lines processed: 410000
+Lines processed: 420000
+Lines processed: 430000
+Lines processed: 440000
+Lines processed: 450000
+Lines processed: 460000
+Lines processed: 470000
+Lines processed: 480000
+Lines processed: 490000
+Lines processed: 500000
+Lines processed: 510000
+Lines processed: 520000
+Lines processed: 530000
+Lines processed: 540000
+Lines processed: 550000
+Lines processed: 560000
+Lines processed: 570000
+Lines processed: 580000
+Lines processed: 590000
+Lines processed: 600000
+Lines processed: 610000
+Lines processed: 620000
+Lines processed: 630000
+Lines processed: 640000
+Lines processed: 650000
+Lines processed: 660000
+Lines processed: 670000
+Lines processed: 680000
+Lines processed: 690000
+Lines processed: 700000
+Lines processed: 710000
+Lines processed: 720000
+Lines processed: 730000
+Lines processed: 740000
+Lines processed: 750000
+Lines processed: 760000
+Lines processed: 770000
+Lines processed: 780000
+Lines processed: 790000
+Lines processed: 800000
+Lines processed: 810000
+Lines processed: 820000
+Lines processed: 830000
+Lines processed: 840000
+Lines processed: 850000
+Lines processed: 860000
+Lines processed: 870000
+Lines processed: 880000
+Lines processed: 890000
+Lines processed: 900000
+Lines processed: 910000
+Lines processed: 920000
+Lines processed: 930000
+Lines processed: 940000
+Lines processed: 950000
+Lines processed: 960000
+Lines processed: 970000
+Lines processed: 980000
+Lines processed: 990000
+Lines processed: 1000000
+==1149== 
+==1149== I   refs:      15,715,919,384
+==1149== I1  misses:       159,518,989
+==1149== LLi misses:           236,825
+==1149== I1  miss rate:           1.02%
+==1149== LLi miss rate:           0.00%
+==1149== 
+==1149== D   refs:       8,386,811,928  (5,617,517,154 rd   + 2,769,294,774 wr)
+==1149== D1  misses:       386,777,382  (  367,777,966 rd   +    18,999,416 wr)
+==1149== LLd misses:       121,731,437  (  119,086,267 rd   +     2,645,170 wr)
+==1149== D1  miss rate:            4.6% (          6.5%     +           0.7%  )
+==1149== LLd miss rate:            1.5% (          2.1%     +           0.1%  )
+==1149== 
+==1149== LL refs:          546,296,371  (  527,296,955 rd   +    18,999,416 wr)
+==1149== LL misses:        121,968,262  (  119,323,092 rd   +     2,645,170 wr)
+==1149== LL miss rate:             0.5% (          0.6%     +           0.1%  )
+
+real	2m48.584s
+user	1m58.593s
+sys	0m10.935s
+==1187== Cachegrind, a cache and branch-prediction profiler
+==1187== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==1187== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==1187== Command: ./database_both 500000
+==1187== 
+--1187-- Warning: Cannot auto-detect cache config, using defaults.
+--1187--          Run with -v to see.
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 2
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+Lines processed: 110000
+Lines processed: 120000
+Lines processed: 130000
+Lines processed: 140000
+Lines processed: 150000
+Lines processed: 160000
+Lines processed: 170000
+Lines processed: 180000
+Lines processed: 190000
+Lines processed: 200000
+Lines processed: 210000
+Lines processed: 220000
+Lines processed: 230000
+Lines processed: 240000
+Lines processed: 250000
+Lines processed: 260000
+Lines processed: 270000
+Lines processed: 280000
+Lines processed: 290000
+Lines processed: 300000
+Lines processed: 310000
+Lines processed: 320000
+Lines processed: 330000
+Lines processed: 340000
+Lines processed: 350000
+Lines processed: 360000
+Lines processed: 370000
+Lines processed: 380000
+Lines processed: 390000
+Lines processed: 400000
+Lines processed: 410000
+Lines processed: 420000
+Lines processed: 430000
+Lines processed: 440000
+Lines processed: 450000
+Lines processed: 460000
+Lines processed: 470000
+Lines processed: 480000
+Lines processed: 490000
+Lines processed: 500000
+Lines processed: 510000
+Lines processed: 520000
+Lines processed: 530000
+Lines processed: 540000
+Lines processed: 550000
+Lines processed: 560000
+Lines processed: 570000
+Lines processed: 580000
+Lines processed: 590000
+Lines processed: 600000
+Lines processed: 610000
+Lines processed: 620000
+Lines processed: 630000
+Lines processed: 640000
+Lines processed: 650000
+Lines processed: 660000
+Lines processed: 670000
+Lines processed: 680000
+Lines processed: 690000
+Lines processed: 700000
+Lines processed: 710000
+Lines processed: 720000
+Lines processed: 730000
+Lines processed: 740000
+Lines processed: 750000
+Lines processed: 760000
+Lines processed: 770000
+Lines processed: 780000
+Lines processed: 790000
+Lines processed: 800000
+Lines processed: 810000
+Lines processed: 820000
+Lines processed: 830000
+Lines processed: 840000
+Lines processed: 850000
+Lines processed: 860000
+Lines processed: 870000
+Lines processed: 880000
+Lines processed: 890000
+Lines processed: 900000
+Lines processed: 910000
+Lines processed: 920000
+Lines processed: 930000
+Lines processed: 940000
+Lines processed: 950000
+Lines processed: 960000
+Lines processed: 970000
+Lines processed: 980000
+Lines processed: 990000
+Lines processed: 1000000
+==1187== 
+==1187== I   refs:      15,715,919,411
+==1187== I1  misses:       159,518,989
+==1187== LLi misses:           236,825
+==1187== I1  miss rate:           1.02%
+==1187== LLi miss rate:           0.00%
+==1187== 
+==1187== D   refs:       8,386,811,930  (5,617,517,155 rd   + 2,769,294,775 wr)
+==1187== D1  misses:       386,777,382  (  367,777,966 rd   +    18,999,416 wr)
+==1187== LLd misses:       121,731,437  (  119,086,267 rd   +     2,645,170 wr)
+==1187== D1  miss rate:            4.6% (          6.5%     +           0.7%  )
+==1187== LLd miss rate:            1.5% (          2.1%     +           0.1%  )
+==1187== 
+==1187== LL refs:          546,296,371  (  527,296,955 rd   +    18,999,416 wr)
+==1187== LL misses:        121,968,262  (  119,323,092 rd   +     2,645,170 wr)
+==1187== LL miss rate:             0.5% (          0.6%     +           0.1%  )
+
+real	2m48.645s
+user	1m58.626s
+sys	0m10.821s
+==1225== Cachegrind, a cache and branch-prediction profiler
+==1225== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==1225== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==1225== Command: ./database_both 500000
+==1225== 
+--1225-- Warning: Cannot auto-detect cache config, using defaults.
+--1225--          Run with -v to see.
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 2
+Lines processed: 10000
+Lines processed: 20000
+Lines processed: 30000
+Lines processed: 40000
+Lines processed: 50000
+Lines processed: 60000
+Lines processed: 70000
+Lines processed: 80000
+Lines processed: 90000
+Lines processed: 100000
+Lines processed: 110000
+Lines processed: 120000
+Lines processed: 130000
+Lines processed: 140000
+Lines processed: 150000
+Lines processed: 160000
+Lines processed: 170000
+Lines processed: 180000
+Lines processed: 190000
+Lines processed: 200000
+Lines processed: 210000
+Lines processed: 220000
+Lines processed: 230000
+Lines processed: 240000
+Lines processed: 250000
+Lines processed: 260000
+Lines processed: 270000
+Lines processed: 280000
+Lines processed: 290000
+Lines processed: 300000
+Lines processed: 310000
+Lines processed: 320000
+Lines processed: 330000
+Lines processed: 340000
+Lines processed: 350000
+Lines processed: 360000
+Lines processed: 370000
+Lines processed: 380000
+Lines processed: 390000
+Lines processed: 400000
+Lines processed: 410000
+Lines processed: 420000
+Lines processed: 430000
+Lines processed: 440000
+Lines processed: 450000
+Lines processed: 460000
+Lines processed: 470000
+Lines processed: 480000
+Lines processed: 490000
+Lines processed: 500000
+Lines processed: 510000
+Lines processed: 520000
+Lines processed: 530000
+Lines processed: 540000
+Lines processed: 550000
+Lines processed: 560000
+Lines processed: 570000
+Lines processed: 580000
+Lines processed: 590000
+Lines processed: 600000
+Lines processed: 610000
+Lines processed: 620000
+Lines processed: 630000
+Lines processed: 640000
+Lines processed: 650000
+Lines processed: 660000
+Lines processed: 670000
+Lines processed: 680000
+Lines processed: 690000
+Lines processed: 700000
+Lines processed: 710000
+Lines processed: 720000
+Lines processed: 730000
+Lines processed: 740000
+Lines processed: 750000
+Lines processed: 760000
+Lines processed: 770000
+Lines processed: 780000
+Lines processed: 790000
+Lines processed: 800000
+Lines processed: 810000
+Lines processed: 820000
+Lines processed: 830000
+Lines processed: 840000
+Lines processed: 850000
+Lines processed: 860000
+Lines processed: 870000
+Lines processed: 880000
+Lines processed: 890000
+Lines processed: 900000
+Lines processed: 910000
+Lines processed: 920000
+Lines processed: 930000
+Lines processed: 940000
+Lines processed: 950000
+Lines processed: 960000
+Lines processed: 970000
+Lines processed: 980000
+Lines processed: 990000
+Lines processed: 1000000
+==1225== 
+==1225== I   refs:      15,715,919,500
+==1225== I1  misses:       159,518,989
+==1225== LLi misses:           236,825
+==1225== I1  miss rate:           1.02%
+==1225== LLi miss rate:           0.00%
+==1225== 
+==1225== D   refs:       8,386,811,980  (5,617,517,180 rd   + 2,769,294,800 wr)
+==1225== D1  misses:       386,777,382  (  367,777,966 rd   +    18,999,416 wr)
+==1225== LLd misses:       121,731,437  (  119,086,267 rd   +     2,645,170 wr)
+==1225== D1  miss rate:            4.6% (          6.5%     +           0.7%  )
+==1225== LLd miss rate:            1.5% (          2.1%     +           0.1%  )
+==1225== 
+==1225== LL refs:          546,296,371  (  527,296,955 rd   +    18,999,416 wr)
+==1225== LL misses:        121,968,262  (  119,323,092 rd   +     2,645,170 wr)
+==1225== LL miss rate:             0.5% (          0.6%     +           0.1%  )
+
+real	2m46.851s
+user	1m58.428s
+sys	0m10.483s
