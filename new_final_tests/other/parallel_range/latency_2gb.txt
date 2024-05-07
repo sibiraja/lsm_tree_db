@@ -1,0 +1,99 @@
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	13m37.264s
+user	8m7.771s
+sys	12m7.553s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 62839 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	13m31.301s
+user	8m10.378s
+sys	12m8.807s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 63051 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	13m4.123s
+user	7m55.941s
+sys	11m35.999s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 63401 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	13m32.450s
+user	8m6.147s
+sys	11m57.202s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 63766 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	13m25.975s
+user	8m7.896s
+sys	11m51.435s

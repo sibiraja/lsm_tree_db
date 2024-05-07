@@ -1,0 +1,99 @@
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+
+real	0m34.122s
+user	0m22.630s
+sys	0m32.479s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 61546 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	0m33.891s
+user	0m22.566s
+sys	0m31.927s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 61568 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	0m33.377s
+user	0m22.457s
+sys	0m30.827s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 61576 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	0m33.982s
+user	0m22.611s
+sys	0m32.047s
+
+
+=====NEW RUN=====
+
+NUM_LEVELS: 9
+range_queries_finished: 1
+range_queries_finished: 2
+range_queries_finished: 3
+range_queries_finished: 4
+range_queries_finished: 5
+range_queries_finished: 6
+range_queries_finished: 7
+range_queries_finished: 8
+range_queries_finished: 9
+range_queries_finished: 10
+./profile.sh: line 44: 61597 Terminated: 15          iostat 1 >> "$iostat_output" 2>&1
+
+real	0m33.394s
+user	0m22.466s
+sys	0m30.768s
