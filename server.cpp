@@ -24,6 +24,15 @@ using namespace std;
 
 void load(string& fileName, lsm_tree* lsm_tree_obj) {
     ifstream file;
+
+    std::string cleanFileName;
+    for (char c : fileName) {
+        if (c != '"' && c != '\'') {
+            cleanFileName += c;
+        }
+    }
+    fileName = cleanFileName;
+
     string newfileName = "generator/" + fileName;
     file.open(newfileName, ios::binary);
     if (file) {
@@ -40,7 +49,7 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
     }
 }
 
-void processCommands(istream& in, lsm_tree* db) {
+bool processCommands(istream& in, lsm_tree* db, int client_socket_fd, uint64_t lines_processed = 0) {
     string line;
     while (getline(in, line)) {
         istringstream iss(line);
@@ -56,7 +65,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'g':
                 iss >> key;
                 return_string = db->get(key);
-                cout << return_string;
+                send(client_socket_fd, return_string.c_str(), return_string.length(), 0);
                 break;
             case 'd':
                 iss >> key;
@@ -65,7 +74,7 @@ void processCommands(istream& in, lsm_tree* db) {
             case 'r':
                 iss >> startKey >> endKey;
                 return_string = db->range(startKey, endKey);
-                cout << return_string;
+                send(client_socket_fd, return_string.c_str(), return_string.length(), 0);
                 break;
             case 'l':
                 iss >> fileName;
@@ -73,7 +82,7 @@ void processCommands(istream& in, lsm_tree* db) {
                 break;
             case 's':
                 return_string = db->printStats();
-                cout << return_string;
+                send(client_socket_fd, return_string.c_str(), return_string.length(), 0);
                 break;
             case 'f':
                 db->flush_buffer();
@@ -87,10 +96,10 @@ void processCommands(istream& in, lsm_tree* db) {
                 iss >> fileName;
                 ifstream file(fileName);
                 if (file) {
-                    processCommands(file, db);
+                    processCommands(file, db, client_socket_fd);
                     file.close();
                 } else {
-                    cout << "File `" << fileName << "` not found!" << endl;
+                    send(client_socket_fd, "File not found!\n", 16, 0);
                 }
                 break;
             }
@@ -99,15 +108,31 @@ void processCommands(istream& in, lsm_tree* db) {
                 db->cleanup();
                 delete db;
                 exit(0);
+            case 'q':  // Client requests to close the connection
+                send(client_socket_fd, "Goodbye!\n", 9, 0);
+                return true;  // Return true to signal disconnect
             default:
-                cout << "Unknown command: " << command << endl;
+                return_string = "Unknown command: ";
+                return_string += command;
+                return_string += '\n';
+                send(client_socket_fd, return_string.c_str(), return_string.length(), 0);
+        }
+
+        ++lines_processed;
+        if (lines_processed % 10000 == 0) {
+            return_string = "Lines processed: " + to_string(lines_processed) + '\n';
+            send(client_socket_fd, return_string.c_str(), return_string.length(), 0);
         }
     }
+
+    return false; // don't return true since that will be interpreted by handle_client_connection() to close the client's connection
 }
 
 void handle_client_connection(int client_socket_fd, lsm_tree* db) {
+    uint64_t lines_processed = 0;
     char buffer[256];
-    while (true) {
+    bool shouldClose = false;
+    while (!shouldClose) {
         memset(buffer, 0, 256);
         int n = read(client_socket_fd, buffer, 255);
         if (n <= 0) {
@@ -117,7 +142,7 @@ void handle_client_connection(int client_socket_fd, lsm_tree* db) {
 
         string input(buffer);
         stringstream ss(input);
-        processCommands(ss, db);
+        shouldClose = processCommands(ss, db, client_socket_fd, lines_processed);
     }
     close(client_socket_fd);
 }

@@ -15,7 +15,13 @@ void load(string& fileName, lsm_tree* lsm_tree_obj) {
     ifstream file;
 
     // Remove quotes from fileName if they exist
-    fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return c == '"' || c == '\''; }), fileName.end());
+    std::string cleanFileName;
+    for (char c : fileName) {
+        if (c != '"' && c != '\'') {
+            cleanFileName += c;
+        }
+    }
+    fileName = cleanFileName;
 
     string newfileName = "generator/" + fileName;
     file.open(newfileName, ios::binary);
