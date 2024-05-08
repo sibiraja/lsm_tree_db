@@ -8,3 +8,5 @@ cachegrind.out*
 *_load.txt
 *.dat
 myenv*
+*.DS_Store
+.DS_Store
