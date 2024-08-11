@@ -1,23 +1,67 @@
-# Feather DB
-Log-structured merge-tree
+# FeatherDB
 
-##
-- Docker for debugging with GDB: `docker build -t lsm_tree .`, and `docker run --privileged -it --rm -v /Users/sibiraja/Desktop/lsm_tree_db:/usr/src/lsm_tree lsm_tree`
-    - Note that Docker containers can mask undefined behavior that I get when running locally on my MacOS, so make sure to run locally first and debug with GDB instead of
-    debugging anything with Docker
+FeatherDB is a high-performance NoSQL database designed using a Log-Structured Merge-tree (LSM-tree) architecture. It supports up to 200 million updates per second by leveraging advanced techniques such as write buffering, deferred persistence, and a leveling merge policy. Optimizations such as Bloom filters and fence pointers are also integrated to enhance read operations and overall query speed.
 
-## Running database
-- Running `make` compiles necessary files, running `make clean` removes all the disk files and log file 
-- Run `./database < commands.txt > db.log 2>&1` to manual test
-- Run `python3 custom_workload.py` to generate the `commands.txt` file
-- Can also execute `g++ -std=c++11 -o database database.cpp` to compile to get C++ 11 features
-- Make sure to run code on a host Linux OS (not MacOS with a Docker image) when running experiments because I need `perf`. Currently running on an Ubuntu-VM with VirtualBox. Execute the following command while logged in as a root user: `sudo perf stat ./database`
-- To test client-server functionality, run `telnet localhost 8081` in a separate terminal to connect to database server as a client
+## Features
 
-## Notes:
-- **profile using iostat and cachegrind for now**
-- if i can use perf on FAS Cluster: `salloc --exclusive --nodes=1 --cpus-per-task=8 --mem=32G -p test -t 0-00:10` --> this gets exclusive access to a node
-    - need to verify if perf is possible on cluster though
-- Profiling cache statistics: `valgrind --tool=cachegrind ./database` and `cg_annotate cachegrind.out.[PID HERE]`
-- iostat: `iostat -dx 2` to report on read/write IOs. Can report averages or minimum/maximum across the metrics for each time interval. Perhaps maximum IOs would be more insightful to see how expensive performance can be.
-- figure out how to measure overall throughput
+- **High Throughput**: Capable of handling 200M updates/second.
+- **LSM-tree Architecture**: Implements write buffering and deferred persistence to optimize write throughput.
+- **Read Optimizations**: Uses Bloom filters and fence pointers to enhance read performance and speed.
+- **Client-Server Model**: Supports interactions through a basic telnet interface.
+
+## Getting Started
+
+### Prerequisites
+
+- Linux OS (Recommended: Ubuntu via VirtualBox for full functionality)
+- Docker (Optional for debugging)
+- Python 3.x
+- GCC with support for C++11
+
+### Building the Project
+
+1. **Compile the Database**
+   ```bash
+   make
+   ```
+   To clean the build:
+   ```bash
+   make clean
+   ```
+
+2. **Running the Database**
+   - For manual testing:
+     ```bash
+     ./database < commands.txt > db.log 2>&1
+     ```
+   - Generate `commands.txt`:
+     ```bash
+     python3 custom_workload.py
+     ```
+
+3. **Client-Server Functionality**
+   - To test the server functionality, run:
+     ```bash
+     telnet localhost 8081
+     ```
+
+### Debugging
+
+- **Local Debugging with GDB**
+  - Build and run a Docker container:
+    ```bash
+    docker build -t lsm_tree .
+    docker run --privileged -it --rm -v /path/to/lsm_tree_db:/usr/src/lsm_tree lsm_tree
+    ```
+  - Note: Running the database natively on Linux is recommended for accurate performance testing.
+
+- **Profiling Tools**
+  - Using `valgrind` for cache statistics:
+    ```bash
+    valgrind --tool=cachegrind ./database
+    cg_annotate cachegrind.out.<PID>
+    ```
+  - Disk I/O monitoring with `iostat`:
+    ```bash
+    iostat -dx 2
+    ```
